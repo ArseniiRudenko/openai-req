@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use serde::{Serialize,Deserialize};
 use crate::structs::Usage;
 
-#[derive(Debug,Serialize,Deserialize)]
+#[derive(Clone, Debug,Serialize,Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
     System,
@@ -10,20 +10,20 @@ pub enum Role {
     Assistant,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Message{
     pub role:Role,
     pub content:String
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum StopSeq{
     String(String),
     Vec(Vec<String>)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ChatRequest {
     model:String,
     messages:Vec<Message>,
@@ -49,7 +49,7 @@ pub struct ChatRequest {
     user: Option<String>
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ChatChoice {
     pub index: u16,
     pub message: Message,
@@ -58,7 +58,7 @@ pub struct ChatChoice {
 
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ChatSuccess {
     pub id: String,
     pub object: String,

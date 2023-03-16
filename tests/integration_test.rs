@@ -1,10 +1,11 @@
 extern crate openai_api_rust;
 use std::fs;
-use openai_api_rust::{OpenAiClient, PostClient};
+use openai_api_rust::{GetClient, OpenAiClient, PostClient};
 use openai_api_rust::chat::structs::*;
 use serde::Deserialize;
 use openai_api_rust::completion::structs::{CompletionRequest, Prompt};
 use openai_api_rust::edit::structs::EditRequest;
+use openai_api_rust::structs::{ApiResponse, FilesResponse, ModelsResponse};
 
 #[derive(Deserialize)]
 struct Config{
@@ -31,7 +32,7 @@ async fn chat() {
    });
    let chat_request = ChatRequest::new(messages);
    let response =
-       client.run(chat_request)
+       client.run(&chat_request)
            .await
            .expect("failed contacting api");
    dbg!(response);
@@ -44,7 +45,7 @@ async fn edit() {
     let instruction = "correct spelling";
     let text = "quick blck fox jupms over lazy dog";
     let request = EditRequest::new_text(instruction).set_input(text);
-    let response = client.run(request)
+    let response = client.run(&request)
         .await
         .expect("failed contacting api");
     dbg!(response);
@@ -56,7 +57,27 @@ async fn completion() {
     let prompt = Prompt::String("long long time ago".to_string());
     let completion_request = CompletionRequest::new(prompt);
     let response =
-        client.run(completion_request)
+        client.run(&completion_request)
+        .await
+        .expect("failed contacting api");
+    dbg!(response);
+}
+
+
+#[tokio::test]
+async fn files() {
+    let client = get_client();
+    let response:ApiResponse<FilesResponse> = client.get()
+        .await
+        .expect("failed contacting api");
+    dbg!(response);
+}
+
+
+#[tokio::test]
+async fn models() {
+    let client = get_client();
+    let response: ApiResponse<ModelsResponse> = client.get()
         .await
         .expect("failed contacting api");
     dbg!(response);

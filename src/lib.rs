@@ -8,7 +8,7 @@ use reqwest::{Client, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use structs::FilesResponse;
-use crate::structs::ApiResponse;
+use crate::structs::{ApiResponse, ModelsResponse};
 
 #[derive(Debug)]
 pub struct OpenAiClient {
@@ -48,71 +48,105 @@ impl OpenAiClient {
     }
 }
 
-#[derive(Debug)]
-pub enum Error{
-    LibErr(reqwest::Error),
-    ApiErr(StatusCode,String)
-}
-
-impl From<reqwest::Error> for Error {
-    fn from(value: reqwest::Error) -> Self {
-        Error::LibErr(value)
-    }
-}
 
 
 #[async_trait(?Send)]
-pub trait PostClient<'a, TReq: Serialize + Sized +'a,TRes: DeserializeOwned>{
+pub trait PostClient<TReq: Serialize + Sized,TRes: DeserializeOwned>{
 
     const ENDPOINT: &'static str;
 
-    fn get_client(&self)->Client;
-    fn get_key(&self)->&str;
-    fn get_url(&self)->&str;
+    fn client(&self) ->Client;
+    fn key(&self) ->&str;
+    fn url(&self) ->&str;
 
-    async fn run(&'a self, req:TReq)-> Result<ApiResponse<TRes>,Error>{
-        let final_url = self.get_url().to_owned()+Self::ENDPOINT;
-        self.get_client().post(final_url)
-            .bearer_auth(self.get_key())
-            .json(&req)
-            .send()
-            .await?.json::<ApiResponse<TRes>>().await.map_err(|e|Error::from(e))
-    }
-}
-
-#[async_trait(?Send)]
-trait GetClient<TRes: DeserializeOwned>{
-
-    const ENDPOINT: &'static str;
-
-    fn get_client(&self)->reqwest::Client;
-    fn get_key(&self)->&str;
-    fn get_url(&self)->&str;
-
-    async fn get(&self)-> Result<TRes,reqwest::Error>{
-        let final_url = self.get_url().to_owned()+Self::ENDPOINT;
-        return self.get_client().get(final_url)
-            .bearer_auth(self.get_key())
+    async fn run(&self, req: &TReq)-> Result<ApiResponse<TRes>,reqwest::Error>{
+        let final_url = self.url().to_owned()+Self::ENDPOINT;
+        self.client().post(final_url)
+            .bearer_auth(self.key())
+            .json(req)
             .send()
             .await?
-            .json::<TRes>()
+            .json::<ApiResponse<TRes>>()
+            .await
+    }
+}
+
+#[async_trait(?Send)]
+pub trait GetClient<TRes: DeserializeOwned>{
+
+    const ENDPOINT: &'static str;
+
+    fn client(&self) ->Client;
+    fn key(&self) ->&str;
+    fn url(&self) ->&str;
+
+    async fn get(&self)-> Result<ApiResponse<TRes>,reqwest::Error>{
+        let final_url = self.url().to_owned()+Self::ENDPOINT;
+        return self.client().get(final_url)
+            .bearer_auth(self.key())
+            .send()
+            .await?
+            .json::<ApiResponse<TRes>>()
             .await;
     }
 }
 
 #[async_trait(?Send)]
+pub trait FormClient<'a, TReq:'a,TRes: DeserializeOwned>
+    where reqwest::multipart::Form: From<TReq>{
+
+    const ENDPOINT: &'static str;
+
+    fn client(&self) ->Client;
+    fn key(&self) ->&str;
+    fn url(&self) ->&str;
+
+    async fn run(&'a self, req:TReq)-> Result<ApiResponse<TRes>,reqwest::Error>{
+        let final_url = self.url().to_owned()+Self::ENDPOINT;
+        self.client().post(final_url)
+            .bearer_auth(self.key())
+            .multipart(reqwest::multipart::Form::from(req))
+            .send()
+            .await?
+            .json::<ApiResponse<TRes>>()
+            .await
+    }
+}
+
+
+
+#[async_trait(?Send)]
 impl GetClient<FilesResponse> for OpenAiClient {
     const ENDPOINT: &'static str = "/files";
 
-    fn get_client(&self) -> Client {
+    fn client(&self) -> Client {
         return self.client.clone()
     }
 
-    fn get_key(&self) -> &str {
+    fn key(&self) -> &str {
         return self.key.as_str()
     }
 
-    fn get_url(&self) -> &str {
+    fn url(&self) -> &str {
+        return self.url.as_str()
+    }
+
+}
+
+
+#[async_trait(?Send)]
+impl GetClient<ModelsResponse> for OpenAiClient {
+    const ENDPOINT: &'static str = "/models";
+
+    fn client(&self) -> Client {
+        return self.client.clone()
+    }
+
+    fn key(&self) -> &str {
+        return self.key.as_str()
+    }
+
+    fn url(&self) -> &str {
         return self.url.as_str()
     }
 

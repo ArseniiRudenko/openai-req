@@ -2,7 +2,7 @@ use serde::{Serialize,Deserialize};
 use crate::structs::Usage;
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditRequest {
     model: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -16,13 +16,13 @@ pub struct EditRequest {
     top_p: Option<f32>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditChoice {
     pub text: String,
     pub index: i64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditResponse {
     pub object: String,
     pub created: i64,

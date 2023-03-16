@@ -3,14 +3,14 @@ use serde::{Serialize,Deserialize};
 use crate::structs::Usage;
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Prompt {
     String(String),
     StringArray(Vec<String>)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CompletionRequest {
     model: String,
     prompt: Prompt,
@@ -44,7 +44,7 @@ pub struct CompletionRequest {
     user: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub  struct CompletionChoice {
     pub text: String,
     pub index: i64,
@@ -52,7 +52,7 @@ pub  struct CompletionChoice {
     pub finish_reason: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub  struct CompletionSuccess {
     pub id: String,
     pub object: String,
