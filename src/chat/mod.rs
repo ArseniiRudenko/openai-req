@@ -1,12 +1,12 @@
 pub mod structs;
 
 use reqwest::Client;
-use structs::{ChatRequest, ChatResponse};
+use structs::{ChatRequest, ChatSuccess};
 use super::{OpenAiClient, PostClient};
 use async_trait::async_trait;
 
 #[async_trait(?Send)]
-impl<'a> PostClient<'a,ChatRequest, ChatResponse> for OpenAiClient {
+impl<'a> PostClient<'a,ChatRequest, ChatSuccess> for OpenAiClient {
 
     const ENDPOINT: &'static str = "/chat/completions";
 

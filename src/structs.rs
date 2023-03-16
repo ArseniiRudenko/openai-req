@@ -8,6 +8,30 @@ pub struct Usage{
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+pub enum ApiResponse<T>{
+    Ok(T),
+    Error(ApiError)
+}
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ApiError {
+    pub error: ApiErrorDetails
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename(serialize = "error"))]
+#[serde(rename(deserialize = "error"))]
+pub struct ApiErrorDetails {
+    pub message: String,
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub param: Option<String>,
+    pub code: Option<String>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct FileInfo {
     pub id: String,
     pub object: String,

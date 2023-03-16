@@ -4,6 +4,7 @@ use crate::structs::Usage;
 
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
 pub enum Prompt {
     String(String),
     StringArray(Vec<String>)
@@ -52,7 +53,7 @@ pub  struct CompletionChoice {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub  struct CompletionResponse {
+pub  struct CompletionSuccess {
     pub id: String,
     pub object: String,
     pub created: i64,
@@ -60,6 +61,7 @@ pub  struct CompletionResponse {
     pub choices: Vec<CompletionChoice>,
     pub usage: Usage,
 }
+
 
 impl CompletionRequest {
     pub fn new(prompt:Prompt) -> CompletionRequest {

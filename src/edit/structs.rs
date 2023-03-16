@@ -30,6 +30,7 @@ pub struct EditResponse {
     pub usage: Usage,
 }
 
+
 impl EditRequest {
 
     pub fn new_text(instruction: &str) -> Self {
@@ -65,8 +66,8 @@ impl EditRequest {
         }
     }
 
-    pub fn set_input(mut self, input: String) -> Self {
-        self.input = Some(input);
+    pub fn set_input(mut self, input: &str) -> Self {
+        self.input = Some(input.to_string());
         self
     }
 

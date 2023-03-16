@@ -2,11 +2,11 @@ pub mod structs;
 
 use reqwest::Client;
 use super::{OpenAiClient, PostClient};
-use structs::{CompletionRequest, CompletionResponse};
+use structs::{CompletionRequest, CompletionSuccess};
 use async_trait::async_trait;
 
 #[async_trait(?Send)]
-impl<'a> PostClient<'a,CompletionRequest, CompletionResponse> for OpenAiClient {
+impl<'a> PostClient<'a,CompletionRequest, CompletionSuccess> for OpenAiClient {
 
     const ENDPOINT: &'static str = "/completions";
 

@@ -8,6 +8,7 @@ use reqwest::{Client, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use structs::FilesResponse;
+use crate::structs::ApiResponse;
 
 #[derive(Debug)]
 pub struct OpenAiClient {
@@ -45,9 +46,8 @@ impl OpenAiClient {
             client: client.clone()
         }
     }
-
-
 }
+
 #[derive(Debug)]
 pub enum Error{
     LibErr(reqwest::Error),
@@ -70,20 +70,13 @@ pub trait PostClient<'a, TReq: Serialize + Sized +'a,TRes: DeserializeOwned>{
     fn get_key(&self)->&str;
     fn get_url(&self)->&str;
 
-    async fn run(&'a self, req:TReq)-> Result<TRes,Error>{
+    async fn run(&'a self, req:TReq)-> Result<ApiResponse<TRes>,Error>{
         let final_url = self.get_url().to_owned()+Self::ENDPOINT;
-        let result= self.get_client().post(final_url)
+        self.get_client().post(final_url)
             .bearer_auth(self.get_key())
             .json(&req)
             .send()
-            .await?;
-        let status = result.status();
-        return if status.is_client_error() || status.is_server_error() {
-            let text = result.text().await?;
-            Err(Error::ApiErr(status, text))
-        } else {
-            result.json::<TRes>().await.map_err(|e|Error::from(e))
-        }
+            .await?.json::<ApiResponse<TRes>>().await.map_err(|e|Error::from(e))
     }
 }
 

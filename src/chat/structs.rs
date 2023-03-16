@@ -57,15 +57,15 @@ pub struct ChatChoice {
 }
 
 
+
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ChatResponse {
+pub struct ChatSuccess {
     pub id: String,
     pub object: String,
     pub created: u64,
     pub choices: Vec<ChatChoice>,
     pub usage:Usage
 }
-
 
 impl ChatRequest {
 
