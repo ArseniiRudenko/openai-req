@@ -1,5 +1,4 @@
 extern crate openai_api_rust;
-use tokio::runtime::Runtime;
 use std::fs;
 use openai_api_rust::{OpenAiClient, PostClient};
 use openai_api_rust::chat::structs::*;

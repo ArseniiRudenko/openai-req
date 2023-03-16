@@ -11,9 +11,15 @@ pub struct Usage{
 #[serde(untagged)]
 pub enum ApiResponse<T>{
     Ok(T),
-    Error(ApiError)
+    Error(ErrorResponse)
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+pub enum ErrorResponse{
+    ApiError(ApiError),
+    OtherError(String)
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ApiError {
