@@ -23,9 +23,8 @@ fn get_client() -> OpenAiClient{
     return  OpenAiClient::new(&openai.key);
 }
 
-#[test]
-fn chat() {
-   let runtime =  Runtime::new().unwrap();
+#[tokio::test]
+async fn chat() {
    let client = get_client();
    let messages  = vec!(Message{
      role: Role::User,
@@ -33,36 +32,33 @@ fn chat() {
    });
    let chat_request = ChatRequest::new(messages);
    let response =
-       runtime
-           .block_on(client.run(chat_request))
+       client.run(chat_request)
+           .await
            .expect("failed contacting api");
    dbg!(response);
 }
 
 
-#[test]
-fn edit() {
-    let runtime =  Runtime::new().unwrap();
+#[tokio::test]
+async fn edit() {
     let client = get_client();
     let instruction = "correct spelling";
     let text = "quick blck fox jupms over lazy dog";
     let request = EditRequest::new_text(instruction).set_input(text);
-    let response =
-    runtime
-        .block_on(client.run(request))
+    let response = client.run(request)
+        .await
         .expect("failed contacting api");
     dbg!(response);
 }
 
-#[test]
-fn completion() {
-    let runtime =  Runtime::new().unwrap();
+#[tokio::test]
+async fn completion() {
     let client = get_client();
     let prompt = Prompt::String("long long time ago".to_string());
     let completion_request = CompletionRequest::new(prompt);
     let response =
-        runtime
-            .block_on(client.run(completion_request))
-            .expect("failed contacting api");
+        client.run(completion_request)
+        .await
+        .expect("failed contacting api");
     dbg!(response);
 }
