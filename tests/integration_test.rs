@@ -1,11 +1,12 @@
-extern crate openai_api_rust;
+extern crate openai_api;
 use std::fs;
-use openai_api_rust::{GetClient, OpenAiClient, PostClient};
-use openai_api_rust::chat::structs::*;
+use openai_api::{GetClient, OpenAiClient, PostClient};
+use openai_api::chat::structs::*;
 use serde::Deserialize;
-use openai_api_rust::completion::structs::{CompletionRequest, Prompt};
-use openai_api_rust::edit::structs::EditRequest;
-use openai_api_rust::structs::{ApiResponse, FilesResponse, ModelsResponse};
+use openai_api::completion::structs::{CompletionRequest, Prompt};
+use openai_api::edit::structs::EditRequest;
+use openai_api::files::structs::FilesResponse;
+use openai_api::structs::{ApiResponse, ModelsResponse};
 
 #[derive(Deserialize)]
 struct Config{

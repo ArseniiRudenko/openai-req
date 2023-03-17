@@ -1,16 +1,18 @@
 [package]
-name = "openai-api-rust"
+name = "openai-api"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = { version = "0.11", features = ["json","multipart"] }
+reqwest = { version = "0.11", features = ["json","multipart","stream"] }
 serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7.7", features = ["codec"] }
 async-trait = "0.1.66"
+anyhow = "1.0.69"
 
 [dev-dependencies]
 toml = "0.7.2"
 pretty_assertions = "1"
-tokio = { version = "1", features = ["full"] }
