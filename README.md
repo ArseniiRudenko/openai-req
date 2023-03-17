@@ -1,4 +1,4 @@
 # openai-api-rust
 
 Refer to tests for examples.
-Currently supported chat, edit and completion API-s
+Currently supported chat, edit, completion and image API-s
