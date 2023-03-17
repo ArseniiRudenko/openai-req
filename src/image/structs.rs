@@ -53,8 +53,11 @@ pub struct ImageData {
 
 #[derive(Debug,Clone, Serialize)]
 pub enum ImageSize {
+    #[serde(rename = "256x256")]
     S256,
+    #[serde(rename = "512x512")]
     S512,
+    #[serde(rename = "1024x1024")]
     S1024,
 }
 

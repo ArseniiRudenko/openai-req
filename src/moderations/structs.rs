@@ -60,14 +60,14 @@ pub struct ModerationRequest{
 }
 
 impl ModerationRequest{
-    fn new(input:Input) -> Self {
+    pub fn new(input:Input) -> Self {
         ModerationRequest{
             input,
             model:ModerationModel::TextModerationStable
         }
     }
 
-    fn with_model(model:ModerationModel,input:Input) -> Self {
+    pub fn with_model(model:ModerationModel,input:Input) -> Self {
         ModerationRequest{
             input,
             model
