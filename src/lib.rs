@@ -4,6 +4,10 @@ pub mod edit;
 pub mod structs;
 pub mod image;
 pub mod files;
+pub mod embeddings;
+pub mod fine_tunes;
+pub mod moderations;
+
 use anyhow::Result;
 use std::io;
 use std::io::{Error, ErrorKind};

@@ -73,3 +73,9 @@ pub struct ModelsResponse {
     pub data: Vec<Model>
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+pub enum Input {
+    String(String),
+    StringArray(Vec<String>)
+}

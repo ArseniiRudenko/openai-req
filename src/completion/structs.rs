@@ -1,19 +1,12 @@
 use std::collections::HashMap;
 use serde::{Serialize,Deserialize};
-use crate::structs::Usage;
+use crate::structs::{Input, Usage};
 
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-#[serde(untagged)]
-pub enum Prompt {
-    String(String),
-    StringArray(Vec<String>)
-}
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CompletionRequest {
     model: String,
-    prompt: Prompt,
+    prompt: Input,
     #[serde(skip_serializing_if = "Option::is_none")]
     suffix: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -64,7 +57,7 @@ pub  struct CompletionSuccess {
 
 
 impl CompletionRequest {
-    pub fn new(prompt:Prompt) -> CompletionRequest {
+    pub fn new(prompt: Input) -> CompletionRequest {
         CompletionRequest {
             model: "text-davinci-003".to_string(),
             prompt,
@@ -84,7 +77,7 @@ impl CompletionRequest {
             user: None,
         }
     }
-    pub fn with_model(model: &str,prompt:Prompt) -> CompletionRequest {
+    pub fn with_model(model: &str, prompt: Input) -> CompletionRequest {
         CompletionRequest {
             model: model.to_string(),
             prompt,

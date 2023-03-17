@@ -3,7 +3,7 @@ use std::fs;
 use openai_api::{GetClient, OpenAiClient, PostClient};
 use openai_api::chat::structs::*;
 use serde::Deserialize;
-use openai_api::completion::structs::{CompletionRequest, Prompt};
+use openai_api::completion::structs::{CompletionRequest, Input};
 use openai_api::edit::structs::EditRequest;
 use openai_api::files::structs::FilesResponse;
 use openai_api::structs::{ApiResponse, ModelsResponse};
@@ -55,7 +55,7 @@ async fn edit() {
 #[tokio::test]
 async fn completion() {
     let client = get_client();
-    let prompt = Prompt::String("long long time ago".to_string());
+    let prompt = Input::String("long long time ago".to_string());
     let completion_request = CompletionRequest::new(prompt);
     let response =
         client.run(&completion_request)
