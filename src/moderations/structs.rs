@@ -1,7 +1,8 @@
 use crate::structs::Input;
+use serde::*;
 
 #[derive(Serialize, Deserialize)]
-struct CategoryScores {
+pub struct CategoryScores {
     pub hate: f64,
     #[serde(rename = "hate/threatening")]
     pub hate_threatening: f64,
@@ -16,7 +17,7 @@ struct CategoryScores {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Categories {
+pub struct Categories {
     pub hate: bool,
     #[serde(rename = "hate/threatening")]
     pub hate_threatening: bool,
@@ -31,19 +32,20 @@ struct Categories {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Struct {
+pub  struct Struct {
     pub categories: Categories,
     pub category_scores: CategoryScores,
     pub flagged: bool,
 }
 
 #[derive(Serialize, Deserialize)]
-struct ModerationResponse {
+pub struct ModerationResponse {
     pub id: String,
     pub model: String,
     pub results: Vec<Struct>,
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum ModerationModel{
     #[serde(rename = "text-moderation-stable")]
     TextModerationStable,
@@ -71,5 +73,4 @@ impl ModerationRequest{
             model
         }
     }
-
 }

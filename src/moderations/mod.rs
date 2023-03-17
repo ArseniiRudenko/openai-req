@@ -1,5 +1,5 @@
 use reqwest::Client;
-use crate::moderations::structs::ModerationRequest;
+use crate::moderations::structs::{ModerationRequest, ModerationResponse};
 use crate::{OpenAiClient, PostClient};
 
 pub mod structs;

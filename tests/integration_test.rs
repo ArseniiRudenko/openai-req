@@ -3,10 +3,10 @@ use std::fs;
 use openai_api::{GetClient, OpenAiClient, PostClient};
 use openai_api::chat::structs::*;
 use serde::Deserialize;
-use openai_api::completion::structs::{CompletionRequest, Input};
+use openai_api::completion::structs::{CompletionRequest};
 use openai_api::edit::structs::EditRequest;
 use openai_api::files::structs::FilesResponse;
-use openai_api::structs::{ApiResponse, ModelsResponse};
+use openai_api::structs::{ApiResponse, Input, ModelsResponse};
 
 #[derive(Deserialize)]
 struct Config{

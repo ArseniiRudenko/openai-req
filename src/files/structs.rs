@@ -15,3 +15,11 @@ pub struct FilesResponse {
     pub data: Vec<FileInfo>,
     pub object: String,
 }
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FileDeleteResponse{
+    pub id: String,
+    pub object: String,
+    pub deleted: bool,
+}
