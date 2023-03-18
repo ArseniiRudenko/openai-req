@@ -17,9 +17,3 @@ pub struct FilesResponse {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FileDeleteResponse{
-    pub id: String,
-    pub object: String,
-    pub deleted: bool,
-}

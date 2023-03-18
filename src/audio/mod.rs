@@ -1,14 +1,13 @@
 use crate::audio::structs::{AudioResponse, TranscriptionRequest, TranslationRequest};
 use crate::{FormClient, OpenAiClient};
-use crate::structs::ApiResponse;
 
 pub mod structs;
 
 
-impl FormClient<TranscriptionRequest,AudioResponse> for OpenAiClient{
+impl<'a> FormClient<'a,TranscriptionRequest,AudioResponse> for OpenAiClient{
     const ENDPOINT: &'static str = "/audio/transcriptions";
 }
 
-impl FormClient<TranslationRequest,AudioResponse> for OpenAiClient{
+impl<'a> FormClient<'a,TranslationRequest,AudioResponse> for OpenAiClient{
     const ENDPOINT: &'static str = "/audio/translations";
 }

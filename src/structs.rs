@@ -80,6 +80,13 @@ pub enum Input {
     StringArray(Vec<String>)
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DeleteResponse {
+    pub id: String,
+    pub object: String,
+    pub deleted: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Display)]
 #[strum(serialize_all = "lowercase")]
 pub enum Iso639_1 {

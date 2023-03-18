@@ -4,8 +4,8 @@ use reqwest::Error;
 use structs::FilesResponse;
 use super::{GetClient, OpenAiClient};
 use async_trait::async_trait;
-use crate::files::structs::{FileDeleteResponse, FileInfo};
-use crate::structs::ApiResponse;
+use crate::files::structs::FileInfo;
+use crate::structs::{ApiResponse, DeleteResponse};
 use anyhow::Result;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
@@ -20,7 +20,7 @@ impl GetClient<FilesResponse> for OpenAiClient {
 #[async_trait(?Send)]
 trait FileClient{
 
-    async fn delete_file(&self, id: &str) -> Result<ApiResponse<FileDeleteResponse>>;
+    async fn delete_file(&self, id: &str) -> Result<ApiResponse<DeleteResponse>>;
 
     async fn retrieve_file(&self,id:&str) -> Result<ApiResponse<FileInfo>>;
 
@@ -32,13 +32,13 @@ trait FileClient{
 #[async_trait(?Send)]
 impl FileClient for OpenAiClient {
 
-    async fn delete_file(&self, id: &str) -> Result<ApiResponse<FileDeleteResponse>> {
+    async fn delete_file(&self, id: &str) -> Result<ApiResponse<DeleteResponse>> {
         let final_url = self.url.to_owned()+"/files/"+id;
         let res = self.client.delete(final_url)
             .bearer_auth(self.key.to_owned())
             .send()
             .await?
-            .json::<ApiResponse<FileDeleteResponse>>()
+            .json::<ApiResponse<DeleteResponse>>()
             .await?;
         Ok(res)
     }
