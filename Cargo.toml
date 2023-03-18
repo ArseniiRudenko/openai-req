@@ -14,7 +14,8 @@ tokio-stream = "0.1.12"
 async-trait = "0.1.66"
 anyhow = "1.0.69"
 bytes = "1.4.0"
-iso639-1 = "0.3.0"
+strum = "0.24.1"
+strum_macros = "0.24.3"
 
 [dev-dependencies]
 toml = "0.7.2"

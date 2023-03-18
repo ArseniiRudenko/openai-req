@@ -1,7 +1,6 @@
 use std::io::Error;
 use std::io::ErrorKind::NotFound;
-use std::ops::Deref;
-use std::path::Path;
+use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use reqwest::multipart::Part;
 use async_trait::async_trait;
@@ -10,13 +9,13 @@ use crate::{AsyncTryFrom, file_to_part};
 
 #[derive(Debug,Clone)]
 pub struct ImageEditRequest {
-    image: Box<Path>,
-    mask: Option<Box<Path>>,
+    image: PathBuf,
+    mask: Option<PathBuf>,
     prompt: String,
     n: Option<i32>,
     size: Option<ImageSize>,
     response_format: Option<String>,
-    user: Option<String>,
+    user: Option<String>
 }
 
 #[derive(Debug,Clone, Serialize)]
@@ -34,10 +33,10 @@ pub struct ImageRequest {
 
 #[derive(Debug,Clone)]
 pub struct ImageVariationRequest {
-    image: Box<Path>,
+    image: PathBuf,
     n: Option<u32>,
     size: Option<String>,
-    user: Option<String>,
+    user: Option<String>
 }
 
 #[derive(Debug,Clone,Deserialize)]
@@ -83,7 +82,7 @@ impl ImageSize {
 }
 
 impl ImageEditRequest{
-   pub fn new(image:Box<Path>, prompt: String) -> Result<Self,Error> {
+   pub fn new(image:PathBuf, prompt: String) -> Result<Self,Error> {
         if image.exists() {
             return Ok(
                 Self {
@@ -99,7 +98,7 @@ impl ImageEditRequest{
         Err(Error::new(NotFound, "File does not exist"))
     }
 
-   pub fn with_mask(mut self, mask: Box<Path>) ->  Result<Self,Error> {
+   pub fn with_mask(mut self, mask: PathBuf) ->  Result<Self,Error> {
         if mask.exists() {
             self.mask = Some(mask);
             return Ok(self)
@@ -138,11 +137,11 @@ impl AsyncTryFrom<ImageEditRequest> for reqwest::multipart::Form {
 
     async fn try_from(request: ImageEditRequest) -> Result<Self, Self::Error> {
         let mut form = reqwest::multipart::Form::new()
-            .part("image", file_to_part(request.image.deref()).await?)
+            .part("image", file_to_part(&request.image).await?)
             .part("prompt", Part::text(request.prompt));
 
         if let Some(mask) = request.mask {
-            form = form.part("mask", file_to_part(mask.deref()).await?);
+            form = form.part("mask", file_to_part(&mask).await?);
         }
         if let Some(n) = request.n {
             form = form.part("n", Part::text(n.to_string()));
@@ -195,7 +194,7 @@ impl ImageRequest {
 
 
 impl ImageVariationRequest {
-    pub fn new(image: Box<Path>) -> Self {
+    pub fn new(image: PathBuf) -> Self {
         ImageVariationRequest {
             image,
             n: None,
@@ -227,7 +226,7 @@ impl AsyncTryFrom<ImageVariationRequest> for reqwest::multipart::Form {
 
     async fn try_from(request: ImageVariationRequest) -> Result<Self, Self::Error> {
         let mut form = reqwest::multipart::Form::new()
-            .part("image", file_to_part(request.image.deref()).await?);
+            .part("image", file_to_part(&request.image).await?);
         if let Some(n) = request.n {
             form = form.part("n", Part::text(n.to_string()));
         }

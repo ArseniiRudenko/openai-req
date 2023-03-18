@@ -59,7 +59,7 @@ pub  struct CompletionSuccess {
 impl CompletionRequest {
     pub fn new(prompt: Input) -> CompletionRequest {
         CompletionRequest {
-            model: "text-davinci-003".to_string(),
+            model: "Text-davinci-003".to_string(),
             prompt,
             suffix: None,
             max_tokens: None,

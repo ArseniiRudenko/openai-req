@@ -7,11 +7,12 @@ pub mod files;
 pub mod embeddings;
 pub mod fine_tunes;
 pub mod moderations;
+mod audio;
 
 use anyhow::Result;
 use std::io;
 use std::io::{Error, ErrorKind};
-use std::path::Path;
+use std::path::PathBuf;
 use async_trait::async_trait;
 use reqwest::{Body, Client};
 use reqwest::multipart::Part;
@@ -145,7 +146,7 @@ pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+'a,T
     }
 }
 
-#[async_trait(?Send)]
+#[async_trait]
 impl GetClient<ModelsResponse> for OpenAiClient {
     const ENDPOINT: &'static str = "/models";
 }
@@ -181,7 +182,7 @@ impl<T, U> AsyncTryInto<U> for T
 }
 
 
-pub(crate) async fn file_to_part(path: &Path) -> io::Result<Part> {
+pub(crate) async fn file_to_part(path: &PathBuf) -> io::Result<Part> {
     let name = path.file_name()
         .ok_or(Error::new(ErrorKind::InvalidInput,"filename is not full"))?
         .to_str()

@@ -47,9 +47,9 @@ pub struct ModerationResponse {
 
 #[derive(Serialize, Deserialize)]
 pub enum ModerationModel{
-    #[serde(rename = "text-moderation-stable")]
+    #[serde(rename = "Text-moderation-stable")]
     TextModerationStable,
-    #[serde(rename = "text-moderation-latest")]
+    #[serde(rename = "Text-moderation-latest")]
     TextModerationLatest
 }
 
