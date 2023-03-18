@@ -59,16 +59,31 @@ impl OpenAiClient {
     }
 }
 
-
-
-#[async_trait(?Send)]
-pub trait PostClient<TReq: Serialize + Sized,TRes: DeserializeOwned>{
-
-    const ENDPOINT: &'static str;
-
+pub trait ApiClient{
     fn client(&self) ->Client;
     fn key(&self) ->&str;
     fn url(&self) ->&str;
+}
+
+impl ApiClient for OpenAiClient {
+    fn client(&self) -> Client {
+        return self.client.clone()
+    }
+
+    fn key(&self) -> &str {
+        return self.key.as_str()
+    }
+
+    fn url(&self) -> &str {
+        return self.url.as_str()
+    }
+}
+
+
+#[async_trait(?Send)]
+pub trait PostClient<TReq: Serialize + Sized,TRes: DeserializeOwned>: ApiClient{
+
+    const ENDPOINT: &'static str;
 
     async fn run(&self, req: &TReq)-> Result<ApiResponse<TRes>>{
         self.run_with_endpoint(Self::ENDPOINT,req).await
@@ -87,14 +102,10 @@ pub trait PostClient<TReq: Serialize + Sized,TRes: DeserializeOwned>{
     }
 }
 
-#[async_trait(?Send)]
-pub trait GetClient<TRes: DeserializeOwned>{
+#[async_trait]
+pub trait GetClient<TRes: DeserializeOwned>: ApiClient{
 
     const ENDPOINT: &'static str;
-
-    fn client(&self) ->Client;
-    fn key(&self) ->&str;
-    fn url(&self) ->&str;
 
     async fn get(&self)-> Result<ApiResponse<TRes>>{
         return self.get_from(Self::ENDPOINT).await
@@ -113,13 +124,9 @@ pub trait GetClient<TRes: DeserializeOwned>{
 }
 
 #[async_trait(?Send)]
-pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+'a,TRes: DeserializeOwned> {
+pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+'a,TRes: DeserializeOwned> : ApiClient{
 
     const ENDPOINT: &'static str;
-
-    fn client(&self) ->Client;
-    fn key(&self) ->&str;
-    fn url(&self) ->&str;
 
     async fn run(&'a self, req: &TReq)-> Result<ApiResponse<TRes>>{
         self.run_with_endpoint(Self::ENDPOINT,req).await
@@ -141,19 +148,6 @@ pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+'a,T
 #[async_trait(?Send)]
 impl GetClient<ModelsResponse> for OpenAiClient {
     const ENDPOINT: &'static str = "/models";
-
-    fn client(&self) -> Client {
-        return self.client.clone()
-    }
-
-    fn key(&self) -> &str {
-        return self.key.as_str()
-    }
-
-    fn url(&self) -> &str {
-        return self.url.as_str()
-    }
-
 }
 
 
