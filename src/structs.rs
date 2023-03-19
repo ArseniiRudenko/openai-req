@@ -40,7 +40,7 @@ pub struct ApiErrorDetails {
 
 
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Model {
     pub id: String,
     pub object: String,
@@ -51,7 +51,7 @@ pub struct Model {
     pub parent: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug,Serialize, Deserialize)]
 pub struct ModelPermission {
     pub  id: String,
     pub object: String,
@@ -67,7 +67,7 @@ pub struct ModelPermission {
     pub is_blocking: bool,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize,Serialize)]
 pub struct ModelsResponse {
     pub object: String,
     pub data: Vec<Model>
@@ -87,7 +87,7 @@ pub struct DeleteResponse {
     pub deleted: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Display)]
+#[derive(Clone, Debug, PartialEq, Display, Serialize, Deserialize)]
 #[strum(serialize_all = "lowercase")]
 pub enum Iso639_1 {
     /// 639-2: aar, name: Afar (Afaraf)

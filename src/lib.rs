@@ -81,8 +81,8 @@ impl ApiClient for OpenAiClient {
 }
 
 
-#[async_trait(?Send)]
-pub trait PostClient<TReq: Serialize + Sized,TRes: DeserializeOwned>: ApiClient{
+#[async_trait]
+pub trait PostClient<TReq: Serialize + Sized + Sync,TRes: DeserializeOwned>: ApiClient{
 
     const ENDPOINT: &'static str;
 
@@ -124,8 +124,8 @@ pub trait GetClient<TRes: DeserializeOwned>: ApiClient{
     }
 }
 
-#[async_trait(?Send)]
-pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+'a,TRes: DeserializeOwned> : ApiClient{
+#[async_trait]
+pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+Sync+ Send+'a,TRes: DeserializeOwned> : ApiClient{
 
     const ENDPOINT: &'static str;
 
