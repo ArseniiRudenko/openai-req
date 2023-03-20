@@ -35,7 +35,7 @@ impl EditRequest {
 
     pub fn new_text(instruction: &str) -> Self {
         Self {
-            model: "Text-davinci-edit-001".to_string(),
+            model: "text-davinci-edit-001".to_string(),
             input: None,
             instruction: instruction.to_string(),
             n: None,
