@@ -16,11 +16,11 @@ use std::path::PathBuf;
 use std::pin::Pin;
 use async_trait::async_trait;
 use bytes::Bytes;
-use reqwest::{Body, Client, RequestBuilder};
+use reqwest::{Body, Client, multipart, RequestBuilder};
 use reqwest::multipart::Part;
 use serde::de::DeserializeOwned;
 use serde::ser::StdError;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio_stream::{Stream, StreamExt};
@@ -28,7 +28,7 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 use with_id::WithRefId;
 use crate::structs::{ApiResponse, Model, ModelRequest, ModelsResponse};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OpenAiClient {
     url:String,
     key:String,
@@ -65,41 +65,17 @@ impl OpenAiClient {
     }
 }
 
-pub trait ApiClient{
-    fn client(&self) ->Client;
-    fn key(&self) ->&str;
-    fn url(&self) ->&str;
-}
-
-impl ApiClient for OpenAiClient {
-    fn client(&self) -> Client {
-        return self.client.clone()
-    }
-
-    fn key(&self) -> &str {
-        return self.key.as_str()
-    }
-
-    fn url(&self) -> &str {
-        return self.url.as_str()
-    }
-}
-
 
 #[async_trait]
-pub trait JsonRequestClient<TReq: Serialize + Sized + Sync,TRes: DeserializeOwned>: ApiClient{
+pub trait JsonRequest<TRes: DeserializeOwned>: Serialize + Sized + Sync{
 
     const ENDPOINT: &'static str;
 
-    async fn run(&self, req: &TReq)-> Result<ApiResponse<TRes>>{
-        self.run_with_endpoint(Self::ENDPOINT,req).await
-    }
-
-    async fn run_with_endpoint(&self, endpoint:&str, req: &TReq) -> Result<ApiResponse<TRes>>{
-        let final_url = self.url().to_owned()+endpoint;
-        let res = self.client().post(final_url)
-            .bearer_auth(self.key())
-            .json(req)
+    async fn run(&self, client:&OpenAiClient) -> Result<ApiResponse<TRes>>{
+        let final_url = client.url.to_owned()+Self::ENDPOINT;
+        let res = client.client.post(final_url)
+            .bearer_auth(client.key.clone())
+            .json(self)
             .send()
             .await?
             .json::<ApiResponse<TRes>>()
@@ -109,21 +85,20 @@ pub trait JsonRequestClient<TReq: Serialize + Sized + Sync,TRes: DeserializeOwne
 }
 
 
-
 #[async_trait]
-pub trait ByUrlClient<TReq: WithRefId<str>+Sync,TRes: DeserializeOwned>: ApiClient{
+pub trait ByUrlRequest<TRes: DeserializeOwned>:WithRefId<str>+Sync{
 
     const ENDPOINT: &'static str;
     const SUFFIX: &'static str;
 
-    fn builder(&self,final_url:String)->RequestBuilder{
-        self.client().get(final_url)
+    fn builder(client:&OpenAiClient,final_url:String)->RequestBuilder{
+        client.client.get(final_url)
     }
 
-    async fn run(&self, req: &TReq)-> Result<ApiResponse<TRes>>{
-        let final_url = self.url().to_owned()+Self::ENDPOINT+req.id()+Self::SUFFIX;
-        let res = self.builder(final_url)
-            .bearer_auth(self.key())
+    async fn run(&self, client:&OpenAiClient)-> Result<ApiResponse<TRes>>{
+        let final_url = client.url.to_owned()+Self::ENDPOINT+self.id()+Self::SUFFIX;
+        let res = Self::builder(client,final_url)
+            .bearer_auth(client.key.clone())
             .send()
             .await?
             .json::<ApiResponse<TRes>>()
@@ -134,32 +109,32 @@ pub trait ByUrlClient<TReq: WithRefId<str>+Sync,TRes: DeserializeOwned>: ApiClie
 
 
 #[async_trait]
-pub trait GetClient<TRes: DeserializeOwned>: ApiClient{
+pub trait GetRequest:DeserializeOwned {
 
     const ENDPOINT: &'static str;
 
-    async fn get(&self)-> Result<ApiResponse<TRes>>{
-        let final_url = self.url().to_owned()+Self::ENDPOINT;
-        let res = self.client().get(final_url)
-            .bearer_auth(self.key())
+    async fn get(client:&OpenAiClient)-> Result<ApiResponse<Self>>{
+        let final_url = client.url.to_owned()+Self::ENDPOINT;
+        let res = client.client.get(final_url)
+            .bearer_auth(client.key.clone())
             .send()
             .await?
-            .json::<ApiResponse<TRes>>()
+            .json::<ApiResponse<Self>>()
             .await?;
         Ok(res)
     }
 }
 
 #[async_trait]
-pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+Sync+ Send+'a,TRes: DeserializeOwned> : ApiClient{
+pub trait FormRequest<TRes: DeserializeOwned> : AsyncTryInto<multipart::Form>+Clone+Sync+Send {
 
     const ENDPOINT: &'static str;
 
-    async fn run(&'a self, req: &TReq)-> Result<ApiResponse<TRes>>{
-        let final_url = self.url().to_owned()+Self::ENDPOINT;
-        let res = self.client().post(final_url)
-            .bearer_auth(self.key())
-            .multipart(AsyncTryInto::try_into(req.clone()).await?)
+    async fn run(&self, client:&OpenAiClient)-> Result<ApiResponse<TRes>>{
+        let final_url =  client.url.to_owned()+Self::ENDPOINT;
+        let res = client.client.post(final_url)
+            .bearer_auth(client.key.clone())
+            .multipart(AsyncTryInto::try_into(self.clone()).await?)
             .send()
             .await?
             .json::<ApiResponse<TRes>>()
@@ -169,15 +144,15 @@ pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+Sync
 }
 
 #[async_trait(?Send)]
-pub trait DownloadClient<T:WithRefId<str>>: ApiClient{
+pub trait DownloadRequest: WithRefId<str>{
 
     const ENDPOINT: &'static str;
     const SUFFIX: &'static str = "";
 
-    async fn download(&self, request: &T) -> Result<Pin<Box<dyn Stream<Item=Result<Bytes, reqwest::Error>>>>>{
-        let final_url = self.url().to_owned()+Self::ENDPOINT+request.id()+Self::SUFFIX;
-        let res = self.client().get(final_url)
-            .bearer_auth(self.key().to_owned())
+    async fn download(&self, client:&OpenAiClient) -> Result<Pin<Box<dyn Stream<Item=Result<Bytes, reqwest::Error>>>>>{
+        let final_url = client.url.to_owned()+Self::ENDPOINT+self.id()+Self::SUFFIX;
+        let res = client.client.get(final_url)
+            .bearer_auth(client.key.clone())
             .send()
             .await?
             .error_for_status()?
@@ -185,9 +160,9 @@ pub trait DownloadClient<T:WithRefId<str>>: ApiClient{
         Ok(Box::pin(res))
     }
 
-    async fn download_to_file(&self, request: &T, target_path:&str) -> Result<()>{
+    async fn download_to_file(&self, client:&OpenAiClient, target_path:&str) -> Result<()>{
         let mut file = File::create(target_path).await?;
-        let mut stream = self.download(request).await?;
+        let mut stream = self.download(client).await?;
         while let Some(chunk) = stream.next().await {
             file.write_all(&chunk?).await?;
         }
@@ -197,11 +172,11 @@ pub trait DownloadClient<T:WithRefId<str>>: ApiClient{
 }
 
 
-impl GetClient<ModelsResponse> for OpenAiClient {
+impl GetRequest for ModelsResponse {
     const ENDPOINT: &'static str = "/models";
 }
 
-impl ByUrlClient<ModelRequest,Model> for OpenAiClient{
+impl ByUrlRequest<Model> for ModelRequest{
     const ENDPOINT: &'static str = "/models/";
     const SUFFIX: &'static str = "";
 }

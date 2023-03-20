@@ -1,38 +1,42 @@
 use reqwest::RequestBuilder;
 use structs::FilesResponse;
-use super::{GetClient, OpenAiClient};
+use super::OpenAiClient;
 use async_trait::async_trait;
-use crate::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfo, FileInfoRequest};
+use crate::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfo, FileInfoRequest, FileUploadRequest};
 use crate::structs::DeleteResponse;
-use crate::{ByUrlClient, DownloadClient};
+use crate::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest};
 
 pub mod structs;
 
 #[async_trait]
-impl GetClient<FilesResponse> for OpenAiClient {
+impl GetRequest for FilesResponse {
     const ENDPOINT: &'static str = "/files";
 }
 
-impl ByUrlClient<FileDeleteRequest, DeleteResponse> for OpenAiClient{
+impl ByUrlRequest<DeleteResponse> for FileDeleteRequest{
     const ENDPOINT: &'static str = "/files/";
     const SUFFIX: &'static str = "";
 
-    fn builder(&self, final_url: String) -> RequestBuilder {
-        self.client.delete(final_url)
+    fn builder(client: &OpenAiClient, final_url: String) -> RequestBuilder {
+        client.client.delete(final_url)
     }
 }
 
-impl ByUrlClient<FileInfoRequest,FileInfo> for OpenAiClient{
+impl ByUrlRequest<FileInfo> for FileInfoRequest{
     const ENDPOINT: &'static str = "/files/";
     const SUFFIX: &'static str = "";
 }
 
-impl DownloadClient<FileDownloadRequest> for OpenAiClient{
+impl DownloadRequest for FileDownloadRequest{
     const ENDPOINT: &'static str = "/files/";
     const SUFFIX: &'static str = "/content";
 }
 
-impl DownloadClient<FileInfo> for OpenAiClient{
+impl DownloadRequest for FileInfo{
     const ENDPOINT: &'static str = "/files/";
     const SUFFIX: &'static str = "/content";
+}
+
+impl FormRequest<FileInfo> for FileUploadRequest{
+    const ENDPOINT: &'static str = "/files";
 }

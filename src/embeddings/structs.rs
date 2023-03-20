@@ -1,4 +1,3 @@
-
 use crate::structs::Input;
 use serde::{Serialize,Deserialize};
 
@@ -33,7 +32,16 @@ pub struct EmbeddingResponse {
 }
 
 impl EmbeddingRequest {
-    pub fn new(model: String, input: Input) -> Self {
+    pub fn new(input: Input) -> Self {
+        EmbeddingRequest {
+            model: "text-embedding-ada-002".to_string(),
+            input,
+            user: None,
+        }
+    }
+
+
+    pub fn with_model(model: String, input: Input) -> Self {
         EmbeddingRequest {
             model,
             input,

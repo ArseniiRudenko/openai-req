@@ -1,43 +1,43 @@
 use crate::fine_tunes::structs::{FineTuneCreateRequest, FineTune, FineTunesResponse, FineTuneEventsResponse, FineTuneGetRequest, FineTuneCancelRequest, FineTuneEventsGetRequest, FineTuneDeleteRequest};
-use crate::{ApiClient, GetClient, OpenAiClient, JsonRequestClient, ByUrlClient};
+use crate::{GetRequest, JsonRequest, ByUrlRequest, OpenAiClient};
 use crate::structs::DeleteResponse;
 pub mod structs;
 use reqwest::RequestBuilder;
 
-impl GetClient<FineTunesResponse> for OpenAiClient{
+impl GetRequest for FineTunesResponse{
     const ENDPOINT: &'static str = "/fine-tunes";
 }
 
-impl JsonRequestClient<FineTuneCreateRequest, FineTune> for OpenAiClient{
+impl JsonRequest<FineTune> for FineTuneCreateRequest{
     const ENDPOINT: &'static str = "/fine-tunes";
 
 }
 
-impl ByUrlClient<FineTuneGetRequest, FineTune> for OpenAiClient {
+impl ByUrlRequest<FineTune> for FineTuneGetRequest {
     const ENDPOINT: &'static str = "/fine-tunes/";
     const SUFFIX: &'static str = "";
 }
 
-impl ByUrlClient<FineTuneCancelRequest, FineTune> for OpenAiClient {
+impl ByUrlRequest<FineTune> for FineTuneCancelRequest {
     const ENDPOINT: &'static str = "/fine-tunes/";
     const SUFFIX: &'static str = "/cancel";
 
-    fn builder(&self, final_url: String) -> RequestBuilder {
-        self.client().post(final_url)
+    fn builder(client:&OpenAiClient, final_url: String) -> RequestBuilder {
+        client.client.post(final_url)
     }
 }
 
-impl ByUrlClient<FineTuneEventsGetRequest, FineTuneEventsResponse> for OpenAiClient {
+impl ByUrlRequest<FineTuneEventsResponse> for FineTuneEventsGetRequest{
     const ENDPOINT: &'static str = "/fine-tunes/";
     const SUFFIX: &'static str = "/events";
 }
 
 
-impl ByUrlClient<FineTuneDeleteRequest, DeleteResponse> for OpenAiClient {
+impl ByUrlRequest<DeleteResponse> for FineTuneDeleteRequest {
     const ENDPOINT: &'static str = "/models/";
     const SUFFIX: &'static str = "";
 
-    fn builder(&self, final_url: String) -> RequestBuilder {
-        self.client.delete(final_url)
+    fn builder(client:&OpenAiClient, final_url: String) -> RequestBuilder {
+        client.client.delete(final_url)
     }
 }

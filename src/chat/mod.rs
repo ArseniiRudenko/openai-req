@@ -1,10 +1,11 @@
 pub mod structs;
 
 use structs::{ChatRequest, ChatSuccess};
-use super::{OpenAiClient, JsonRequestClient};
+use super::OpenAiClient;
 use async_trait::async_trait;
+use crate::JsonRequest;
 
 #[async_trait(?Send)]
-impl JsonRequestClient<ChatRequest, ChatSuccess> for OpenAiClient {
+impl JsonRequest<ChatSuccess> for ChatRequest {
     const ENDPOINT: &'static str = "/chat/completions";
 }

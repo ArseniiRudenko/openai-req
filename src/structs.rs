@@ -86,6 +86,25 @@ pub enum Input {
     StringArray(Vec<String>)
 }
 
+impl From<String> for Input{
+    fn from(value:String) -> Self {
+        Input::String(value)
+    }
+}
+
+impl From<&str> for Input{
+    fn from(value:&str) -> Self {
+        Input::String(value.to_string())
+    }
+}
+
+impl From<Vec<String>> for Input{
+    fn from(value: Vec<String>) -> Self {
+        Input::StringArray(value)
+    }
+}
+
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DeleteResponse {
     pub id: String,

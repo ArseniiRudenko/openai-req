@@ -28,7 +28,7 @@ impl ToString for ResponseFormat {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug,Serialize,Deserialize)]
 pub struct TranscriptionRequest{
     file: PathBuf,
     model: String,
@@ -39,7 +39,7 @@ pub struct TranscriptionRequest{
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug,Serialize,Deserialize)]
 pub struct TranslationRequest{
     file: PathBuf,
     model: String,

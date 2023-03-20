@@ -1,8 +1,8 @@
 use crate::embeddings::structs::{EmbeddingRequest, EmbeddingResponse};
-use crate::{OpenAiClient, JsonRequestClient};
+use crate::{JsonRequest, OpenAiClient};
 
 pub mod structs;
 
-impl JsonRequestClient<EmbeddingRequest,EmbeddingResponse> for OpenAiClient{
+impl JsonRequest<EmbeddingResponse> for EmbeddingRequest{
     const ENDPOINT: &'static str = "/embeddings";
 }
