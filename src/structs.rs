@@ -1,5 +1,6 @@
 use serde::{Serialize,Deserialize};
 use strum_macros::Display;
+use with_id::WithRefId;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Usage{
@@ -38,6 +39,11 @@ pub struct ApiErrorDetails {
     pub code: Option<String>
 }
 
+#[derive(Clone, Debug, Deserialize,Serialize,WithRefId)]
+pub struct ModelRequest {
+    #[id]
+    pub model_name: String
+}
 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -37,9 +37,5 @@ Supports all non-obsolete apis at the moment of writing:
 
 ## Implementation notes
   - For transcriptions and translations currently only json response format is supported.
-  - There are some inconsistencies in implementations:
-most apis are implemented as call to one of two client operations - get in case there is no arguments,
-and run in case it is request-response interaction, and type of request determines type of response.
-but that pattern is currently broken for operations in files and fine-tunes.
-I'm planing to fix it, but bad api is better than no api.
+
    

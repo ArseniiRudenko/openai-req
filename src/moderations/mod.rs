@@ -1,9 +1,9 @@
 use crate::moderations::structs::{ModerationRequest, ModerationResponse};
-use crate::{OpenAiClient, PostClient};
+use crate::{OpenAiClient, JsonRequestClient};
 
 pub mod structs;
 
 
-impl PostClient<ModerationRequest,ModerationResponse> for OpenAiClient{
+impl JsonRequestClient<ModerationRequest,ModerationResponse> for OpenAiClient{
     const ENDPOINT: &'static str = "/moderations";
 }

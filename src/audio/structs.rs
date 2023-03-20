@@ -8,7 +8,6 @@ use async_trait::async_trait;
 
 #[derive(Clone, Debug,Serialize,Deserialize)]
 pub enum ResponseFormat{
-
     Json,
     Text,
     Srt,

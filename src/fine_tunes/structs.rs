@@ -1,5 +1,6 @@
 use crate::files::structs::FileInfo;
 use serde::{Serialize,Deserialize};
+use with_id::WithRefId;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FineTuneCreateRequest {
@@ -16,6 +17,12 @@ pub struct FineTuneCreateRequest {
     classification_betas: Option<Vec<f64>>,
     suffix: Option<String>,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+pub struct FineTuneCancelRequest{
+    id:String
+}
+
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -52,7 +59,7 @@ pub struct FineTune {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
 pub struct FineTuneListEntry {
     pub id: String,
     pub object: String,
@@ -66,6 +73,61 @@ pub struct FineTuneListEntry {
     pub validation_files: Vec<FileInfo>,
     pub training_files: Vec<FileInfo>,
     pub updated_at: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+pub struct FineTuneGetRequest{
+    pub id: String
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+pub struct FineTuneEventsGetRequest{
+    pub id: String
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+pub struct FineTuneDeleteRequest{
+    pub id: String
+}
+
+impl From<FineTuneListEntry> for FineTuneGetRequest{
+    fn from(value: FineTuneListEntry) -> Self {
+        FineTuneGetRequest{
+            id: value.id
+        }
+    }
+}
+
+impl From<FineTuneListEntry> for FineTuneDeleteRequest{
+    fn from(value: FineTuneListEntry) -> Self {
+        FineTuneDeleteRequest{
+            id:value.id
+        }
+    }
+}
+
+impl From<FineTune> for FineTuneDeleteRequest{
+    fn from(value: FineTune) -> Self {
+        FineTuneDeleteRequest{
+            id: value.id
+        }
+    }
+}
+
+impl From<FineTuneListEntry> for FineTuneEventsGetRequest{
+    fn from(value: FineTuneListEntry) -> Self {
+        FineTuneEventsGetRequest{
+            id:value.id
+        }
+    }
+}
+
+impl From<FineTune> for FineTuneEventsGetRequest{
+    fn from(value: FineTune) -> Self {
+        FineTuneEventsGetRequest{
+            id: value.id
+        }
+    }
 }
 
 

@@ -13,15 +13,20 @@ use anyhow::Result;
 use std::io;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
+use std::pin::Pin;
 use async_trait::async_trait;
-use reqwest::{Body, Client};
+use bytes::Bytes;
+use reqwest::{Body, Client, RequestBuilder};
 use reqwest::multipart::Part;
 use serde::de::DeserializeOwned;
 use serde::ser::StdError;
 use serde::Serialize;
 use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
+use tokio_stream::{Stream, StreamExt};
 use tokio_util::codec::{BytesCodec, FramedRead};
-use crate::structs::{ApiResponse, ModelsResponse};
+use with_id::WithRefId;
+use crate::structs::{ApiResponse, Model, ModelRequest, ModelsResponse};
 
 #[derive(Debug)]
 pub struct OpenAiClient {
@@ -82,7 +87,7 @@ impl ApiClient for OpenAiClient {
 
 
 #[async_trait]
-pub trait PostClient<TReq: Serialize + Sized + Sync,TRes: DeserializeOwned>: ApiClient{
+pub trait JsonRequestClient<TReq: Serialize + Sized + Sync,TRes: DeserializeOwned>: ApiClient{
 
     const ENDPOINT: &'static str;
 
@@ -103,17 +108,38 @@ pub trait PostClient<TReq: Serialize + Sized + Sync,TRes: DeserializeOwned>: Api
     }
 }
 
+
+
+#[async_trait]
+pub trait ByUrlClient<TReq: WithRefId<str>+Sync,TRes: DeserializeOwned>: ApiClient{
+
+    const ENDPOINT: &'static str;
+    const SUFFIX: &'static str;
+
+    fn builder(&self,final_url:String)->RequestBuilder{
+        self.client().get(final_url)
+    }
+
+    async fn run(&self, req: &TReq)-> Result<ApiResponse<TRes>>{
+        let final_url = self.url().to_owned()+Self::ENDPOINT+req.id()+Self::SUFFIX;
+        let res = self.builder(final_url)
+            .bearer_auth(self.key())
+            .send()
+            .await?
+            .json::<ApiResponse<TRes>>()
+            .await?;
+        Ok(res)
+    }
+}
+
+
 #[async_trait]
 pub trait GetClient<TRes: DeserializeOwned>: ApiClient{
 
     const ENDPOINT: &'static str;
 
     async fn get(&self)-> Result<ApiResponse<TRes>>{
-        return self.get_from(Self::ENDPOINT).await
-    }
-
-    async fn get_from(&self,endpoint:&str)-> Result<ApiResponse<TRes>>{
-        let final_url = self.url().to_owned()+endpoint;
+        let final_url = self.url().to_owned()+Self::ENDPOINT;
         let res = self.client().get(final_url)
             .bearer_auth(self.key())
             .send()
@@ -130,11 +156,7 @@ pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+Sync
     const ENDPOINT: &'static str;
 
     async fn run(&'a self, req: &TReq)-> Result<ApiResponse<TRes>>{
-        self.run_with_endpoint(Self::ENDPOINT,req).await
-    }
-
-    async fn run_with_endpoint(&'a self, endpoint:&str,req: &TReq)-> Result<ApiResponse<TRes>>{
-        let final_url = self.url().to_owned()+endpoint;
+        let final_url = self.url().to_owned()+Self::ENDPOINT;
         let res = self.client().post(final_url)
             .bearer_auth(self.key())
             .multipart(AsyncTryInto::try_into(req.clone()).await?)
@@ -146,9 +168,42 @@ pub trait FormClient<'a, TReq:AsyncTryInto<reqwest::multipart::Form> +Clone+Sync
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
+pub trait DownloadClient<T:WithRefId<str>>: ApiClient{
+
+    const ENDPOINT: &'static str;
+    const SUFFIX: &'static str = "";
+
+    async fn download(&self, request: &T) -> Result<Pin<Box<dyn Stream<Item=Result<Bytes, reqwest::Error>>>>>{
+        let final_url = self.url().to_owned()+Self::ENDPOINT+request.id()+Self::SUFFIX;
+        let res = self.client().get(final_url)
+            .bearer_auth(self.key().to_owned())
+            .send()
+            .await?
+            .error_for_status()?
+            .bytes_stream();
+        Ok(Box::pin(res))
+    }
+
+    async fn download_to_file(&self, request: &T, target_path:&str) -> Result<()>{
+        let mut file = File::create(target_path).await?;
+        let mut stream = self.download(request).await?;
+        while let Some(chunk) = stream.next().await {
+            file.write_all(&chunk?).await?;
+        }
+        Ok(())
+    }
+
+}
+
+
 impl GetClient<ModelsResponse> for OpenAiClient {
     const ENDPOINT: &'static str = "/models";
+}
+
+impl ByUrlClient<ModelRequest,Model> for OpenAiClient{
+    const ENDPOINT: &'static str = "/models/";
+    const SUFFIX: &'static str = "";
 }
 
 

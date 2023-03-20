@@ -1,10 +1,10 @@
 pub mod structs;
 
-use super::{OpenAiClient, PostClient};
+use super::{OpenAiClient, JsonRequestClient};
 use structs::{CompletionRequest, CompletionSuccess};
 use async_trait::async_trait;
 
 #[async_trait(?Send)]
-impl PostClient<CompletionRequest, CompletionSuccess> for OpenAiClient {
+impl JsonRequestClient<CompletionRequest, CompletionSuccess> for OpenAiClient {
     const ENDPOINT: &'static str = "/completions";
 }

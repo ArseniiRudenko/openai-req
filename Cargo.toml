@@ -3,6 +3,7 @@ name = "openai-api"
 version = "0.1.0"
 edition = "2021"
 
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -16,6 +17,7 @@ anyhow = "1.0.69"
 bytes = "1.4.0"
 strum = "0.24.1"
 strum_macros = "0.24.3"
+with-id = { version ="1", features=["derive"]}
 
 [dev-dependencies]
 toml = "0.7.2"
