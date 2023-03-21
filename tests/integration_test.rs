@@ -88,7 +88,7 @@ async fn embeddings()-> Result<(),anyhow::Error> {
 }
 
 
-///test creates files, so it is ignored by default
+///test creates files in your account, so it is disabled by default
 #[tokio::test]
 #[ignore]
 async fn file_upload() -> Result<(),anyhow::Error> {
@@ -106,22 +106,21 @@ async fn file_upload() -> Result<(),anyhow::Error> {
     Ok(())
 }
 
-
+///list uploaded files
 #[tokio::test]
 async fn file_list() -> Result<(),anyhow::Error> {
     let client = get_client();
-    //list uploaded files
     let files = FileListResponse::get(&client).await?;
     dbg!(files);
     Ok(())
 }
 
-
+///download first file from account
+/// IMPORTANT! downloading files are disabled for free accounts, so this wont work on free account
 #[tokio::test]
 #[ignore]
 async fn file_download() -> Result<(),anyhow::Error> {
-    //download file
-    // IMPORTANT! downloading files are disabled for free accounts, so this wont work on free account
+
     let client = get_client();
     let files = FileListResponse::get(&client).await?;
     let info = files.data.first().ok_or(anyhow!("No files available"))?;
@@ -134,6 +133,9 @@ async fn file_download() -> Result<(),anyhow::Error> {
     Ok(())
 }
 
+///delete all uploaded  files, destructive, so disabled by default
+/// IMPORTANT! deleting file will not work immediately after uploading it,
+/// because openai does some processing on uploaded files
 #[tokio::test]
 #[ignore]
 async fn file_delete() -> Result<(),anyhow::Error> {
@@ -142,9 +144,7 @@ async fn file_delete() -> Result<(),anyhow::Error> {
     let files = FileListResponse::get(&client).await?;
     dbg!(&files);
 
-    //delete all uploaded  files
-    // IMPORTANT! deleting file will not work immediately after uploading it,
-    // because openai does some processing on uploaded files
+
     for file in files.data{
         let delete_request:FileDeleteRequest = file.clone().into();
         let delete_result = delete_request.run(&client).await?;
@@ -174,7 +174,11 @@ async fn fine_tune_list() -> Result<(),anyhow::Error> {
     Ok(())
 }
 
-
+///deletes all fine tunes, destructive, so disabled by default
+/// IMPORTANT! deleting fine tune model will not work immediately after creating fine-tune,
+/// you will need to wait for it to finish
+/// also, after model is deleted, fine-tune for it will still be there,
+/// there is nothing in documentation about deleting fine-tunes, only models.
 #[tokio::test]
 #[ignore]
 async fn file_tune_model_delete() -> Result<(),anyhow::Error> {
@@ -183,11 +187,7 @@ async fn file_tune_model_delete() -> Result<(),anyhow::Error> {
     let fine_tunes = FineTuneListResponse::get(&client).await?;
     dbg!(&fine_tunes);
 
-    //delete all fine tunes
-    // IMPORTANT! deleting fine tune model will not work immediately after creating fine-tune,
-    // you will need to wait for it to finish
-    // also, after model is deleted, fine-tune for it will still be there for some reason,
-    // there is nothing in documentation about deleting fine-tunes, only models
+
     for file in fine_tunes.data{
         let delete_request: ModelDeleteRequest = file.clone().try_into()?;
         let delete_result = delete_request.run(&client).await?;
