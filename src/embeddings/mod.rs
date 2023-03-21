@@ -2,6 +2,7 @@
 use crate::{Input, JsonRequest};
 use serde::{Serialize,Deserialize};
 
+///embedding request as defiled by https://platform.openai.com/docs/api-reference/embeddings
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EmbeddingRequest{
     pub model:String,

@@ -1,7 +1,7 @@
 use serde::{Serialize,Deserialize};
 use crate::{JsonRequest, Usage};
 use async_trait::async_trait;
-
+///text edit request as defined by https://platform.openai.com/docs/api-reference/edits
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditRequest {
     model: String,

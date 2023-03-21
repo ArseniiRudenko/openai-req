@@ -10,7 +10,7 @@ use openai_req::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonReq
 use openai_req::audio::{Iso639_1, TranscriptionRequest, TranslationRequest};
 use openai_req::completion::CompletionRequest;
 use openai_req::embeddings::EmbeddingRequest;
-use openai_req::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FileListResponse, FileUploadRequest};
+use openai_req::files::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FileListResponse, FileUploadRequest};
 use openai_req::fine_tunes::structs::{FineTuneCreateRequest, FineTuneListResponse};
 use openai_req::model::{ModelDeleteRequest, ModelListResponse};
 use openai_req::moderations::ModerationRequest;
