@@ -25,7 +25,7 @@ use tokio::io::AsyncWriteExt;
 use tokio_stream::{Stream, StreamExt};
 use tokio_util::codec::{BytesCodec, FramedRead};
 use with_id::WithRefId;
-use crate::structs::{Error, ErrorResponse, Model, ModelRequest, ModelsResponse};
+use crate::structs::{Error, ErrorResponse, Model, ModelRequest, ModelListResponse};
 
 #[derive(Debug, Clone)]
 pub struct OpenAiClient {
@@ -181,7 +181,7 @@ pub trait DownloadRequest: WithRefId<str>{
 }
 
 
-impl GetRequest for ModelsResponse {
+impl GetRequest for ModelListResponse {
     const ENDPOINT: &'static str = "/models";
 }
 

@@ -1,5 +1,5 @@
 use reqwest::RequestBuilder;
-use structs::FilesResponse;
+use structs::FileListResponse;
 use super::OpenAiClient;
 use async_trait::async_trait;
 use crate::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfo, FileInfoRequest, FileUploadRequest};
@@ -9,7 +9,7 @@ use crate::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest};
 pub mod structs;
 
 #[async_trait]
-impl GetRequest for FilesResponse {
+impl GetRequest for FileListResponse {
     const ENDPOINT: &'static str = "/files";
 }
 

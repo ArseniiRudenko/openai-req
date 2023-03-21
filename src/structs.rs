@@ -115,7 +115,7 @@ pub struct ModelPermission {
 }
 
 #[derive(Clone, Debug, Deserialize,Serialize)]
-pub struct ModelsResponse {
+pub struct ModelListResponse {
     pub object: String,
     pub data: Vec<Model>
 }

@@ -17,12 +17,85 @@ pub struct FineTuneCreateRequest {
     classification_betas: Option<Vec<f64>>,
     suffix: Option<String>,
 }
+impl FineTuneCreateRequest {
+    pub fn new(training_file: String) -> Self {
+        FineTuneCreateRequest {
+            training_file,
+            validation_file: None,
+            model: None,
+            n_epochs: None,
+            batch_size: None,
+            learning_rate_multiplier: None,
+            prompt_loss_weight: None,
+            compute_classification_metrics: None,
+            classification_n_classes: None,
+            classification_positive_class: None,
+            classification_betas: None,
+            suffix: None,
+        }
+    }
+
+    pub fn validation_file(mut self, validation_file: String) -> Self {
+        self.validation_file = Some(validation_file);
+        self
+    }
+
+    pub fn model(mut self, model: String) -> Self {
+        self.model = Some(model);
+        self
+    }
+
+    pub fn n_epochs(mut self, n_epochs: i32) -> Self {
+        self.n_epochs = Some(n_epochs);
+        self
+    }
+
+    pub fn batch_size(mut self, batch_size: i32) -> Self {
+        self.batch_size = Some(batch_size);
+        self
+    }
+
+    pub fn learning_rate_multiplier(mut self, learning_rate_multiplier: f64) -> Self {
+        self.learning_rate_multiplier = Some(learning_rate_multiplier);
+        self
+    }
+
+    pub fn prompt_loss_weight(mut self, prompt_loss_weight: f64) -> Self {
+        self.prompt_loss_weight = Some(prompt_loss_weight);
+        self
+    }
+
+    pub fn compute_classification_metrics(mut self, compute_classification_metrics: bool) -> Self {
+        self.compute_classification_metrics = Some(compute_classification_metrics);
+        self
+    }
+
+    pub fn classification_n_classes(mut self, classification_n_classes: i32) -> Self {
+        self.classification_n_classes = Some(classification_n_classes);
+        self
+    }
+
+    pub fn classification_positive_class(mut self, classification_positive_class: String) -> Self {
+        self.classification_positive_class = Some(classification_positive_class);
+        self
+    }
+
+    pub fn classification_betas(mut self, classification_betas: Vec<f64>) -> Self {
+        self.classification_betas = Some(classification_betas);
+        self
+    }
+
+    pub fn suffix(mut self, suffix: String) -> Self {
+        self.suffix = Some(suffix);
+        self
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
 pub struct FineTuneCancelRequest{
     id:String
 }
-
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -114,6 +187,22 @@ impl From<FineTune> for FineTuneDeleteRequest{
     }
 }
 
+impl From<FineTuneListEntry> for FineTuneCancelRequest{
+    fn from(value: FineTuneListEntry) -> Self {
+        FineTuneCancelRequest{
+            id:value.id
+        }
+    }
+}
+
+impl From<FineTune> for FineTuneCancelRequest{
+    fn from(value: FineTune) -> Self {
+        FineTuneCancelRequest{
+            id: value.id
+        }
+    }
+}
+
 impl From<FineTuneListEntry> for FineTuneEventsGetRequest{
     fn from(value: FineTuneListEntry) -> Self {
         FineTuneEventsGetRequest{
@@ -132,7 +221,7 @@ impl From<FineTune> for FineTuneEventsGetRequest{
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FineTunesResponse{
+pub struct FineTuneListResponse {
     pub object: String,
     pub data: Vec<FineTuneListEntry>
 }
@@ -144,76 +233,3 @@ pub struct FineTuneEventsResponse{
     pub data: Vec<FineTuneEvent>
 }
 
-impl FineTuneCreateRequest {
-    pub fn new(training_file: String) -> Self {
-        FineTuneCreateRequest {
-            training_file,
-            validation_file: None,
-            model: None,
-            n_epochs: None,
-            batch_size: None,
-            learning_rate_multiplier: None,
-            prompt_loss_weight: None,
-            compute_classification_metrics: None,
-            classification_n_classes: None,
-            classification_positive_class: None,
-            classification_betas: None,
-            suffix: None,
-        }
-    }
-
-    pub fn validation_file(mut self, validation_file: String) -> Self {
-        self.validation_file = Some(validation_file);
-        self
-    }
-
-    pub fn model(mut self, model: String) -> Self {
-        self.model = Some(model);
-        self
-    }
-
-    pub fn n_epochs(mut self, n_epochs: i32) -> Self {
-        self.n_epochs = Some(n_epochs);
-        self
-    }
-
-    pub fn batch_size(mut self, batch_size: i32) -> Self {
-        self.batch_size = Some(batch_size);
-        self
-    }
-
-    pub fn learning_rate_multiplier(mut self, learning_rate_multiplier: f64) -> Self {
-        self.learning_rate_multiplier = Some(learning_rate_multiplier);
-        self
-    }
-
-    pub fn prompt_loss_weight(mut self, prompt_loss_weight: f64) -> Self {
-        self.prompt_loss_weight = Some(prompt_loss_weight);
-        self
-    }
-
-    pub fn compute_classification_metrics(mut self, compute_classification_metrics: bool) -> Self {
-        self.compute_classification_metrics = Some(compute_classification_metrics);
-        self
-    }
-
-    pub fn classification_n_classes(mut self, classification_n_classes: i32) -> Self {
-        self.classification_n_classes = Some(classification_n_classes);
-        self
-    }
-
-    pub fn classification_positive_class(mut self, classification_positive_class: String) -> Self {
-        self.classification_positive_class = Some(classification_positive_class);
-        self
-    }
-
-    pub fn classification_betas(mut self, classification_betas: Vec<f64>) -> Self {
-        self.classification_betas = Some(classification_betas);
-        self
-    }
-
-    pub fn suffix(mut self, suffix: String) -> Self {
-        self.suffix = Some(suffix);
-        self
-    }
-}

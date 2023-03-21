@@ -22,3 +22,4 @@ with-id = { version ="1", features=["derive"]}
 [dev-dependencies]
 toml = "0.7.2"
 pretty_assertions = "1"
+file_diff = "1.0.0"

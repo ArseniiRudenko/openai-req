@@ -55,7 +55,7 @@ impl From<FileInfo> for FileDownloadRequest {
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FilesResponse {
+pub struct FileListResponse {
     pub data: Vec<FileInfo>,
     pub object: String,
 }

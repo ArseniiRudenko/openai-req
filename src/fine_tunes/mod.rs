@@ -1,10 +1,10 @@
-use crate::fine_tunes::structs::{FineTuneCreateRequest, FineTune, FineTunesResponse, FineTuneEventsResponse, FineTuneGetRequest, FineTuneCancelRequest, FineTuneEventsGetRequest, FineTuneDeleteRequest};
+use crate::fine_tunes::structs::{FineTuneCreateRequest, FineTune, FineTuneListResponse, FineTuneEventsResponse, FineTuneGetRequest, FineTuneCancelRequest, FineTuneEventsGetRequest, FineTuneDeleteRequest};
 use crate::{GetRequest, JsonRequest, ByUrlRequest, OpenAiClient};
 use crate::structs::DeleteResponse;
 pub mod structs;
 use reqwest::RequestBuilder;
 
-impl GetRequest for FineTunesResponse{
+impl GetRequest for FineTuneListResponse {
     const ENDPOINT: &'static str = "/fine-tunes";
 }
 
