@@ -7,7 +7,7 @@ pub mod files;
 pub mod embeddings;
 pub mod fine_tunes;
 pub mod moderations;
-mod audio;
+pub mod audio;
 
 use anyhow::Result;
 use std::io;
@@ -29,6 +29,8 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 use with_id::WithRefId;
 use crate::structs::{Error, ErrorResponse, Model, ModelRequest, ModelListResponse};
 
+/// This is main client structure required for all requests,
+/// it is passed as a reference parameter into operations
 #[derive(Debug, Clone)]
 pub struct OpenAiClient {
     url:String,
@@ -40,23 +42,31 @@ impl OpenAiClient {
 
     const URL: &'static str = "https://api.openai.com/v1";
 
+    ///simplest constructor, uses default https://api.openai.com/v1 url,
+    /// and creates new default client with connection pool for connections
     pub fn new(key: &str)->Self{
         let client = Client::new();
         OpenAiClient::with_client(key,&client)
     }
 
-    /// reqwest library recommends reusing single client,
-    /// so if you run access to multiple api-s, pass client into constructor
+    /// reqwest library recommends re-using single client,
+    /// so if you run access to multiple api-s, pass client into constructor.
+    /// Also use this constructor if you want to customize your client
+    /// (for example set different timeout, or use proxy)
     pub fn with_client(key: &str, client: &Client)->Self{
         OpenAiClient::with_url_and_client(key,OpenAiClient::URL,client)
     }
 
+
+    ///if you want to change base url from https://api.openai.com/v1 to something else - you can
     pub fn with_url(key: &str, url: &str) -> Self {
         let client = Client::new();
         OpenAiClient::with_url_and_client(key,url,&client)
     }
 
 
+    /// this constructor allows you to pass custom everything, changing client,
+    /// key and base url for all requests
     pub fn with_url_and_client(key: &str, url: &str, client: &Client)->Self{
         OpenAiClient {
             url: url.to_string(),

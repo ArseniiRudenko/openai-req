@@ -1,10 +1,13 @@
 extern crate openai_api;
 use std::fs;
+use std::path::PathBuf;
 use anyhow::anyhow;
 use file_diff::diff;
 use openai_api::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
 use openai_api::chat::structs::*;
 use serde::Deserialize;
+use openai_api::audio::{Iso639_1, TranscriptionRequest, TranslationRequest};
+use openai_api::chat::{ChatRequest, Message, Role};
 use openai_api::completion::structs::{CompletionRequest};
 use openai_api::edit::structs::EditRequest;
 use openai_api::embeddings::structs::EmbeddingRequest;
@@ -92,7 +95,7 @@ async fn embeddings()-> Result<(),anyhow::Error> {
 async fn file_upload() -> Result<(),anyhow::Error> {
     let client = get_client();
     //upload file
-    let file = FileUploadRequest::with_str("fine-tune.json","fine-tune");
+    let file = FileUploadRequest::with_str("tests/fine-tune.json","fine-tune");
     let response = file.run(&client).await?;
     dbg!(&response);
     //get info about single file
@@ -203,4 +206,28 @@ async fn moderation() -> Result<(),anyhow::Error> {
     Ok(())
 }
 
+///you'll need to provide your own audio file, so test is ignored by default
+#[tokio::test]
+#[ignore]
+async fn transcription() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    let req =
+        TranscriptionRequest::new(PathBuf::from("tests/Linus-linux.mp3"))
+        .language(Iso639_1::En);
+    let res = req.run(&client).await?;
+    dbg!(res);
+    Ok(())
+}
 
+///you'll need to provide your own audio file, so test is ignored by default
+#[tokio::test]
+#[ignore]
+async fn translation() -> Result<(),anyhow::Error> {
+    //translate into english
+    let client = get_client();
+    let req =
+        TranslationRequest::new(PathBuf::from("tests/Linus-linux.mp3"));
+    let res = req.run(&client).await?;
+    dbg!(res);
+    Ok(())
+}
