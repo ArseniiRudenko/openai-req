@@ -1,4 +1,3 @@
-use crate::fine_tunes::structs::{FineTuneCreateRequest, FineTune, FineTuneListResponse, FineTuneEventsResponse, FineTuneGetRequest, FineTuneCancelRequest, FineTuneEventsGetRequest};
 use crate::{GetRequest, JsonRequest, ByUrlRequest, OpenAiClient};
 pub mod structs;
 use reqwest::RequestBuilder;

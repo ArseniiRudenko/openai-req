@@ -3,7 +3,7 @@ use reqwest::RequestBuilder;
 use crate::{ByUrlRequest, DeleteResponse, GetRequest, OpenAiClient};
 use with_id::WithRefId;
 use serde::{Serialize,Deserialize};
-use crate::fine_tunes::structs::{FineTune, FineTuneListEntry};
+use crate::fine_tunes::{FineTune, FineTuneListEntry};
 
 /// allows to get info about single model from its name
 #[derive(Clone, Debug, Deserialize,Serialize,WithRefId)]
