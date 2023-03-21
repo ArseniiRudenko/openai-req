@@ -1,12 +1,12 @@
 extern crate openai_api;
 use std::fs;
-use openai_api::{ByUrlRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
+use openai_api::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
 use openai_api::chat::structs::*;
 use serde::Deserialize;
 use openai_api::completion::structs::{CompletionRequest};
 use openai_api::edit::structs::EditRequest;
 use openai_api::embeddings::structs::EmbeddingRequest;
-use openai_api::files::structs::{FileInfoRequest, FilesResponse, FileUploadRequest};
+use openai_api::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FilesResponse, FileUploadRequest};
 use openai_api::structs::{Input, ModelsResponse};
 
 #[derive(Deserialize)]
@@ -86,15 +86,26 @@ async fn embeddings()-> Result<(),anyhow::Error> {
 #[tokio::test]
 async fn files() -> Result<(),anyhow::Error> {
     let client = get_client();
-    let file = FileUploadRequest::with_str("Cargo.toml","test");
+    //upload file
+    let file = FileUploadRequest::with_str("Cargo.toml","fine-tune");
     let response = file.run(&client).await?;
     dbg!(&response);
+    //ist uploaded files
     let files = FilesResponse::get(&client).await?;
     dbg!(files);
+    //get info about single file
     let info_request=FileInfoRequest{
         file_id: response.id
     };
     let info= info_request.run(&client).await?;
-    dbg!(info);
+    dbg!(&info);
+    //download file
+    let download_request:FileDownloadRequest = info.clone().into();
+    download_request.download_to_file(&client,"fine-tune2.json").await?;
+    //delete file
+    let delete_request:FileDeleteRequest = info.clone().into();
+    let delete_result = delete_request.run(&client).await?;
+    dbg!(delete_result);
+    fs::remove_file("fine-tune2.json")?;
     Ok(())
 }

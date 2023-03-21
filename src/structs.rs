@@ -20,7 +20,7 @@ pub struct Error{
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f,"Issue while processing request: {}, returned response: {}",self.inner,self.response)
+        write!(f,"{}",self.response)
     }
 }
 
@@ -41,8 +41,8 @@ pub enum ErrorResponse{
 impl Display for ErrorResponse {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ErrorResponse::ApiError(a) => write!(f,"error: {}",a),
-            ErrorResponse::OtherError(s) => write!(f,"error: {}",s)
+            ErrorResponse::ApiError(a) => write!(f,"{}",a),
+            ErrorResponse::OtherError(s) => write!(f,"{}",s)
         }
     }
 }
