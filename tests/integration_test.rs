@@ -10,6 +10,7 @@ use openai_api::edit::structs::EditRequest;
 use openai_api::embeddings::structs::EmbeddingRequest;
 use openai_api::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FileListResponse, FileUploadRequest};
 use openai_api::fine_tunes::structs::{FineTuneCreateRequest, FineTuneDeleteRequest, FineTuneListResponse};
+use openai_api::moderations::structs::ModerationRequest;
 use openai_api::structs::{Input, ModelListResponse};
 
 #[derive(Deserialize)]
@@ -174,15 +175,15 @@ async fn fine_tune_list() -> Result<(),anyhow::Error> {
 
 #[tokio::test]
 #[ignore]
-async fn file_tune_delete() -> Result<(),anyhow::Error> {
+async fn file_tune_model_delete() -> Result<(),anyhow::Error> {
     let client = get_client();
     //list fine tunes
     let fine_tunes = FineTuneListResponse::get(&client).await?;
     dbg!(&fine_tunes);
 
     //delete all fine tunes
-    // IMPORTANT! deleting fine tune will not work immediately after creating it,
-    // you will need to wait for it to finish or cancel it
+    // IMPORTANT! deleting fine tune model will not work immediately after creating fine-tune,
+    // you will need to wait for it to finish
     // also, after model is deleted, fine-tune for it will still be there for some reason,
     // there is nothing in documentation about deleting fine-tunes, only models
     for file in fine_tunes.data{
@@ -192,4 +193,14 @@ async fn file_tune_delete() -> Result<(),anyhow::Error> {
     }
     Ok(())
 }
+
+#[tokio::test]
+async fn moderation() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    let req = ModerationRequest::new("I want to kill everyone".into());
+    let res = req.run(&client).await?;
+    dbg!(res);
+    Ok(())
+}
+
 

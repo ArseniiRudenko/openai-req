@@ -1,7 +1,7 @@
 use crate::structs::Input;
 use serde::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CategoryScores {
     pub hate: f64,
     #[serde(rename = "hate/threatening")]
@@ -16,7 +16,7 @@ pub struct CategoryScores {
     pub violence_graphic: f64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Categories {
     pub hate: bool,
     #[serde(rename = "hate/threatening")]
@@ -31,29 +31,29 @@ pub struct Categories {
     pub violence_graphic: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub  struct Struct {
     pub categories: Categories,
     pub category_scores: CategoryScores,
     pub flagged: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ModerationResponse {
     pub id: String,
     pub model: String,
     pub results: Vec<Struct>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ModerationModel{
-    #[serde(rename = "Text-moderation-stable")]
+    #[serde(rename = "text-moderation-stable")]
     TextModerationStable,
-    #[serde(rename = "Text-moderation-latest")]
+    #[serde(rename = "text-moderation-latest")]
     TextModerationLatest
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ModerationRequest{
     pub input:Input,
     pub model:ModerationModel
