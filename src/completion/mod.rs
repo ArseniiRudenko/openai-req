@@ -1,6 +1,5 @@
 pub mod structs;
 
-use super::OpenAiClient;
 use structs::{CompletionRequest, CompletionSuccess};
 use async_trait::async_trait;
 use crate::JsonRequest;

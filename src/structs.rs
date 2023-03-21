@@ -1,4 +1,6 @@
-use serde::{Serialize,Deserialize};
+
+use std::fmt::{Debug, Display, Formatter};
+use serde::{Serialize, Deserialize};
 use strum_macros::Display;
 use with_id::WithRefId;
 
@@ -9,12 +11,25 @@ pub struct Usage{
     pub total_tokens: u64
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(untagged)]
-pub enum ApiResponse<T>{
-    Ok(T),
-    Error(ErrorResponse)
+#[derive(Debug)]
+pub struct Error{
+    pub(crate) response:ErrorResponse,
+    pub(crate) inner:reqwest::Error
 }
+
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f,"Issue while processing request: {}, returned response: {}",self.inner,self.response)
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.inner)
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
@@ -22,6 +37,32 @@ pub enum ErrorResponse{
     ApiError(ApiError),
     OtherError(String)
 }
+
+impl Display for ErrorResponse {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ErrorResponse::ApiError(a) => write!(f,"error: {}",a),
+            ErrorResponse::OtherError(s) => write!(f,"error: {}",s)
+        }
+    }
+}
+
+
+impl Display for ApiError{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self.error.param {
+            None => match &self.error.code {
+                None => write!(f,"{}",self.error.message),
+                Some(code) => write!(f,"{}, code:{}",self.error.message,code)
+            }
+            Some(param) => match &self.error.code {
+                None => write!(f,"{}, param:{}",self.error.message,param),
+                Some(code) => write!(f,"{}, param:{}, code: {}",self.error.message,param,code)
+            }
+        }
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ApiError {

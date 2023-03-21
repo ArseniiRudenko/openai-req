@@ -11,22 +11,21 @@ mod audio;
 
 use anyhow::Result;
 use std::io;
-use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 use std::pin::Pin;
 use async_trait::async_trait;
 use bytes::Bytes;
-use reqwest::{Body, Client, multipart, RequestBuilder};
+use reqwest::{Body, Client, multipart, RequestBuilder, Response};
 use reqwest::multipart::Part;
 use serde::de::DeserializeOwned;
 use serde::ser::StdError;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio_stream::{Stream, StreamExt};
 use tokio_util::codec::{BytesCodec, FramedRead};
 use with_id::WithRefId;
-use crate::structs::{ApiResponse, Model, ModelRequest, ModelsResponse};
+use crate::structs::{Error, ErrorResponse, Model, ModelRequest, ModelsResponse};
 
 #[derive(Debug, Clone)]
 pub struct OpenAiClient {
@@ -65,22 +64,32 @@ impl OpenAiClient {
     }
 }
 
+async fn process_response<T:DeserializeOwned>(response: Response) ->Result<T>{
+    let code = response.error_for_status_ref();
+    return match code {
+        Ok(_) => Ok(response.json::<T>().await?),
+        Err(err) =>
+            Err(Error {
+                response: response.json::<ErrorResponse>().await?,
+                inner: err
+            })?
+    }
+}
+
 
 #[async_trait]
 pub trait JsonRequest<TRes: DeserializeOwned>: Serialize + Sized + Sync{
 
     const ENDPOINT: &'static str;
 
-    async fn run(&self, client:&OpenAiClient) -> Result<ApiResponse<TRes>>{
+    async fn run(&self, client:&OpenAiClient) -> Result<TRes>{
         let final_url = client.url.to_owned()+Self::ENDPOINT;
         let res = client.client.post(final_url)
             .bearer_auth(client.key.clone())
             .json(self)
             .send()
-            .await?
-            .json::<ApiResponse<TRes>>()
             .await?;
-        Ok(res)
+        process_response::<TRes>(res).await
     }
 }
 
@@ -95,15 +104,13 @@ pub trait ByUrlRequest<TRes: DeserializeOwned>:WithRefId<str>+Sync{
         client.client.get(final_url)
     }
 
-    async fn run(&self, client:&OpenAiClient)-> Result<ApiResponse<TRes>>{
+    async fn run(&self, client:&OpenAiClient)-> Result<TRes>{
         let final_url = client.url.to_owned()+Self::ENDPOINT+self.id()+Self::SUFFIX;
         let res = Self::builder(client,final_url)
             .bearer_auth(client.key.clone())
             .send()
-            .await?
-            .json::<ApiResponse<TRes>>()
             .await?;
-        Ok(res)
+        process_response::<TRes>(res).await
     }
 }
 
@@ -113,15 +120,13 @@ pub trait GetRequest:DeserializeOwned {
 
     const ENDPOINT: &'static str;
 
-    async fn get(client:&OpenAiClient)-> Result<ApiResponse<Self>>{
+    async fn get(client:&OpenAiClient)-> Result<Self>{
         let final_url = client.url.to_owned()+Self::ENDPOINT;
         let res = client.client.get(final_url)
             .bearer_auth(client.key.clone())
             .send()
-            .await?
-            .json::<ApiResponse<Self>>()
             .await?;
-        Ok(res)
+        process_response::<Self>(res).await
     }
 }
 
@@ -130,16 +135,14 @@ pub trait FormRequest<TRes: DeserializeOwned> : AsyncTryInto<multipart::Form>+Cl
 
     const ENDPOINT: &'static str;
 
-    async fn run(&self, client:&OpenAiClient)-> Result<ApiResponse<TRes>>{
+    async fn run(&self, client:&OpenAiClient)-> Result<TRes>{
         let final_url =  client.url.to_owned()+Self::ENDPOINT;
         let res = client.client.post(final_url)
             .bearer_auth(client.key.clone())
             .multipart(AsyncTryInto::try_into(self.clone()).await?)
             .send()
-            .await?
-            .json::<ApiResponse<TRes>>()
             .await?;
-        Ok(res)
+        process_response::<TRes>(res).await
     }
 }
 
@@ -154,10 +157,16 @@ pub trait DownloadRequest: WithRefId<str>{
         let res = client.client.get(final_url)
             .bearer_auth(client.key.clone())
             .send()
-            .await?
-            .error_for_status()?
-            .bytes_stream();
-        Ok(Box::pin(res))
+            .await?;
+        let code = res.error_for_status_ref();
+        return match code {
+            Ok(_) => Ok(Box::pin(res.bytes_stream())),
+            Err(err) =>
+                Err(Error {
+                    response: res.json::<ErrorResponse>().await?,
+                    inner: err
+                })?
+        }
     }
 
     async fn download_to_file(&self, client:&OpenAiClient, target_path:&str) -> Result<()>{
@@ -214,9 +223,9 @@ impl<T, U> AsyncTryInto<U> for T
 
 pub(crate) async fn file_to_part(path: &PathBuf) -> io::Result<Part> {
     let name = path.file_name()
-        .ok_or(Error::new(ErrorKind::InvalidInput,"filename is not full"))?
+        .ok_or(io::Error::new(io::ErrorKind::InvalidInput,"filename is not full"))?
         .to_str()
-        .ok_or(Error::new(ErrorKind::InvalidData,"non unicode filename"))?
+        .ok_or(io::Error::new(io::ErrorKind::InvalidData,"non unicode filename"))?
         .to_owned();
     let file = File::open(path).await?;
     let size = file.metadata().await?.len();

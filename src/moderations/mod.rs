@@ -1,5 +1,5 @@
 use crate::moderations::structs::{ModerationRequest, ModerationResponse};
-use crate::{OpenAiClient, JsonRequest};
+use crate::JsonRequest;
 
 pub mod structs;
 

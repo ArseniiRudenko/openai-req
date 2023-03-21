@@ -1,5 +1,5 @@
 use crate::embeddings::structs::{EmbeddingRequest, EmbeddingResponse};
-use crate::{JsonRequest, OpenAiClient};
+use crate::JsonRequest;
 
 pub mod structs;
 

@@ -1,7 +1,6 @@
 pub mod structs;
 
 use structs::{ChatRequest, ChatSuccess};
-use super::OpenAiClient;
 use async_trait::async_trait;
 use crate::JsonRequest;
 
