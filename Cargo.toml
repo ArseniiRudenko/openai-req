@@ -2,9 +2,12 @@
 name = "openai-req"
 version = "1.0.0"
 edition = "2021"
-repository=
-readme="README.md"
-
+authors = ["Arsenii Rudenko <inbox@arudenko.work>"]
+description = "Client for OpenAI api, written with reqwest and tokio"
+keywords = ["OpenAI", "api", "client", "web"]
+repository = "https://github.com/ArseniiRudenko/openai-req"
+readme = "README.md"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
