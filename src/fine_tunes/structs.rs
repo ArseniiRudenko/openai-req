@@ -5,16 +5,27 @@ use with_id::WithRefId;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FineTuneCreateRequest {
     training_file: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     validation_file: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     model: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     n_epochs: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     batch_size: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     learning_rate_multiplier: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     prompt_loss_weight: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     compute_classification_metrics: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     classification_n_classes: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     classification_positive_class: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     classification_betas: Option<Vec<f64>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     suffix: Option<String>,
 }
 impl FineTuneCreateRequest {
@@ -132,7 +143,7 @@ pub struct FineTune {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+#[derive(Serialize, Deserialize, Debug, Clone, WithRefId)]
 pub struct FineTuneListEntry {
     pub id: String,
     pub object: String,
@@ -171,19 +182,24 @@ impl From<FineTuneListEntry> for FineTuneGetRequest{
     }
 }
 
-impl From<FineTuneListEntry> for FineTuneDeleteRequest{
-    fn from(value: FineTuneListEntry) -> Self {
-        FineTuneDeleteRequest{
-            id:value.id
-        }
+impl TryFrom<FineTuneListEntry> for FineTuneDeleteRequest{
+    type Error = &'static str;
+
+    fn try_from(value: FineTuneListEntry) -> Result<Self, Self::Error> {
+        Ok(FineTuneDeleteRequest{
+            id: value.fine_tuned_model.ok_or("can only convert finished fine tune, that has fine tune model set")?
+        })
     }
 }
 
-impl From<FineTune> for FineTuneDeleteRequest{
-    fn from(value: FineTune) -> Self {
-        FineTuneDeleteRequest{
-            id: value.id
-        }
+impl TryFrom<FineTune> for FineTuneDeleteRequest{
+
+    type Error = &'static str;
+
+    fn try_from(value: FineTune) -> Result<Self, Self::Error> {
+        Ok(FineTuneDeleteRequest{
+            id: value.fine_tuned_model.ok_or("can only convert finished fine tune, that has fine tune model set")?
+        })
     }
 }
 

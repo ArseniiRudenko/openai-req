@@ -1,13 +1,15 @@
 extern crate openai_api;
 use std::fs;
-use file_diff::{diff, diff_files};
-use openai_api::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
+use anyhow::anyhow;
+use file_diff::diff;
+use openai_api::{AsyncTryInto, ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
 use openai_api::chat::structs::*;
 use serde::Deserialize;
 use openai_api::completion::structs::{CompletionRequest};
 use openai_api::edit::structs::EditRequest;
 use openai_api::embeddings::structs::EmbeddingRequest;
 use openai_api::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FileListResponse, FileUploadRequest};
+use openai_api::fine_tunes::structs::{FineTuneCreateRequest, FineTuneDeleteRequest, FineTuneListResponse};
 use openai_api::structs::{Input, ModelListResponse};
 
 #[derive(Deserialize)]
@@ -85,40 +87,42 @@ async fn embeddings()-> Result<(),anyhow::Error> {
 
 
 #[tokio::test]
-async fn file_add() -> Result<(),anyhow::Error> {
+async fn file_upload() -> Result<(),anyhow::Error> {
     let client = get_client();
     //upload file
     let file = FileUploadRequest::with_str("fine-tune.json","fine-tune");
     let response = file.run(&client).await?;
     dbg!(&response);
-    //list uploaded files
-    let files = FileListResponse::get(&client).await?;
-    dbg!(files);
     //get info about single file
     let info_request=FileInfoRequest{
         file_id: response.id
     };
     let info= info_request.run(&client).await?;
     dbg!(&info);
+    Ok(())
+}
+#[tokio::test]
+async fn file_list() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    //list uploaded files
+    let files = FileListResponse::get(&client).await?;
+    dbg!(files);
+    Ok(())
+}
 
+#[tokio::test]
+async fn file_download() -> Result<(),anyhow::Error> {
     //download file
     // IMPORTANT! downloading files are disabled for free accounts, so this wont work on free account
-
-    /*let download_request:FileDownloadRequest = info.clone().into();
-    download_request.download_to_file(&client,"fine-tune2.json").await?;
-    if !diff("fine-tune.json","fine-tune2.json"){
+    let client = get_client();
+    let files = FileListResponse::get(&client).await?;
+    let info = files.data.first().ok_or(anyhow!("No files available"))?;
+    let download_request: FileDownloadRequest = info.clone().into();
+    download_request.download_to_file(&client, "fine-tune2.json").await?;
+    if !diff("fine-tune.json", "fine-tune2.json") {
         panic!("downloaded file are not the same as uploaded file")
     }
     fs::remove_file("fine-tune2.json")?;
-    */
-
-    //delete file
-    //also will not work immediately, because
-    let delete_request:FileDeleteRequest = info.clone().into();
-    let delete_result = delete_request.run(&client).await?;
-    dbg!(delete_result);
-
-
     Ok(())
 }
 
@@ -130,7 +134,8 @@ async fn file_delete() -> Result<(),anyhow::Error> {
     dbg!(&files);
 
     //delete all uploaded  files
-    // IMPORTANT! will not work immediately after uploading, because openai does some processing on uploaded files
+    // IMPORTANT! deleting file will not work immediately after uploading it,
+    // because openai does some processing on uploaded files
     for file in files.data{
         let delete_request:FileDeleteRequest = file.clone().into();
         let delete_result = delete_request.run(&client).await?;
@@ -140,21 +145,41 @@ async fn file_delete() -> Result<(),anyhow::Error> {
 }
 
 
+#[tokio::test]
+async fn fine_tune_create() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    let files = FileListResponse::get(&client).await?;
+    let info = files.data.first().ok_or(anyhow!("No files available"))?;
+    let ft_req = FineTuneCreateRequest::new(info.id.to_string());
+    let ft = ft_req.run(&client).await?;
+    dbg!(&ft);
+    Ok(())
+}
 
 
 #[tokio::test]
-async fn fine_tunes() -> Result<(),anyhow::Error> {
+async fn fine_tune_list() -> Result<(),anyhow::Error> {
     let client = get_client();
-    //upload fine-tune file
-    let file = FileUploadRequest::with_str("fine-tune.json","fine-tune");
-    let response = file.run(&client).await?;
-    dbg!(&response);
+    let lst = FineTuneListResponse::get(&client).await?;
+    dbg!(lst);
+    Ok(())
+}
 
 
+#[tokio::test]
+async fn file_tune_delete() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    //list fine tunes
+    let files = FineTuneListResponse::get(&client).await?;
+    dbg!(&files);
 
-    //delete file
-    let delete_request:FileDeleteRequest = response.clone().into();
-    let delete_result = delete_request.run(&client).await?;
-    dbg!(&delete_result);
+    //delete all fine tunes
+    // IMPORTANT! deleting fine tune will not work immediately after creating it,
+    // you will need to wait for it to finish or cancel it
+    for file in files.data{
+        let delete_request:FineTuneDeleteRequest = file.clone().try_into()?;
+        let delete_result = delete_request.run(&client).await?;
+        dbg!(delete_result);
+    }
     Ok(())
 }

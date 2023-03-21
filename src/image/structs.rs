@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use reqwest::multipart::Part;
 use async_trait::async_trait;
+use tokio::try_join;
 use crate::{AsyncTryFrom, file_to_part};
 
 
@@ -137,11 +138,15 @@ impl AsyncTryFrom<ImageEditRequest> for reqwest::multipart::Form {
 
     async fn try_from(request: ImageEditRequest) -> Result<Self, Self::Error> {
         let mut form = reqwest::multipart::Form::new()
-            .part("image", file_to_part(&request.image).await?)
             .part("prompt", Part::text(request.prompt));
 
         if let Some(mask) = request.mask {
-            form = form.part("mask", file_to_part(&mask).await?);
+            let (image,mask) = try_join!(file_to_part(&mask),file_to_part(&request.image));
+            form =
+                form.part("image", image)
+                .part("mask", mask);
+        }else {
+            form = form.part("image", file_to_part(&request.image).await?)
         }
         if let Some(n) = request.n {
             form = form.part("n", Part::text(n.to_string()));

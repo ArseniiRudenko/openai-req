@@ -15,6 +15,7 @@ use std::path::PathBuf;
 use std::pin::Pin;
 use async_trait::async_trait;
 use bytes::Bytes;
+use futures_util::TryFutureExt;
 use reqwest::{Body, Client, multipart, RequestBuilder, Response};
 use reqwest::multipart::Part;
 use serde::de::DeserializeOwned;
@@ -22,6 +23,7 @@ use serde::ser::StdError;
 use serde::Serialize;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use tokio::{join, try_join};
 use tokio_stream::{Stream, StreamExt};
 use tokio_util::codec::{BytesCodec, FramedRead};
 use with_id::WithRefId;
@@ -67,7 +69,11 @@ impl OpenAiClient {
 async fn process_response<T:DeserializeOwned>(response: Response) ->Result<T>{
     let code = response.error_for_status_ref();
     return match code {
-        Ok(_) => Ok(response.json::<T>().await?),
+        Ok(_) =>{
+            let full = response.text().await?;
+             serde_json::from_str(&full)
+                 .map_err(|err| anyhow::Error::new(err).context(full))
+        }
         Err(err) =>
             Err(Error {
                 response: response.json::<ErrorResponse>().await?,
@@ -170,8 +176,9 @@ pub trait DownloadRequest: WithRefId<str>{
     }
 
     async fn download_to_file(&self, client:&OpenAiClient, target_path:&str) -> Result<()>{
-        let mut file = File::create(target_path).await?;
-        let mut stream = self.download(client).await?;
+        let file = File::create(target_path).map_err(|e| anyhow::Error::new(e));
+        let stream = self.download(client);
+        let (mut file, mut stream) = try_join!(file, stream);
         while let Some(chunk) = stream.next().await {
             file.write_all(&chunk?).await?;
         }
@@ -228,8 +235,8 @@ pub(crate) async fn file_to_part(path: &PathBuf) -> io::Result<Part> {
         .ok_or(io::Error::new(io::ErrorKind::InvalidData,"non unicode filename"))?
         .to_owned();
     let file = File::open(path).await?;
-    let size = file.metadata().await?.len();
     let stream = FramedRead::new(file, BytesCodec::new());
     let body = Body::wrap_stream(stream);
+    let size = file.metadata().await?.len();
     Ok(Part::stream_with_length(body,size).file_name(name))
 }
