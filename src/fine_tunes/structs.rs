@@ -1,6 +1,8 @@
+use std::fmt::{Display, Formatter};
 use crate::files::structs::FileInfo;
 use serde::{Serialize,Deserialize};
 use with_id::WithRefId;
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FineTuneCreateRequest {
@@ -111,11 +113,12 @@ pub struct FineTuneCancelRequest{
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Hyperparams {
-    pub batch_size: i64,
-    pub learning_rate_multiplier: f64,
+    pub batch_size: Option<i64>,
+    pub learning_rate_multiplier: Option<f64>,
     pub n_epochs: i64,
     pub prompt_loss_weight: f64,
 }
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FineTuneEvent {
@@ -124,6 +127,34 @@ pub struct FineTuneEvent {
     pub level: String,
     pub message: String,
 }
+
+///same as file info, but also provides status information in context of fine tune
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FineTuneFileInfo{
+    pub id: String,
+    pub object: String,
+    pub bytes: i64,
+    pub created_at: i64,
+    pub filename: String,
+    pub purpose: String,
+    pub status: String,
+    pub status_details: Option<String>
+}
+
+
+impl From<FineTuneFileInfo> for FileInfo{
+    fn from(value: FineTuneFileInfo) -> Self {
+        FileInfo{
+            id: value.id,
+            object: value.object,
+            bytes: value.bytes,
+            created_at: value.created_at,
+            filename: value.filename,
+            purpose: value.purpose,
+        }
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FineTune {
@@ -135,10 +166,10 @@ pub struct FineTune {
     pub fine_tuned_model: Option<String>,
     pub hyperparams: Hyperparams,
     pub organization_id: String,
-    pub result_files: Vec<FileInfo>,
+    pub result_files: Vec<FineTuneFileInfo>,
     pub status: String,
-    pub validation_files: Vec<FileInfo>,
-    pub training_files: Vec<FileInfo>,
+    pub validation_files: Vec<FineTuneFileInfo>,
+    pub training_files: Vec<FineTuneFileInfo>,
     pub updated_at: i64,
 }
 
@@ -152,10 +183,10 @@ pub struct FineTuneListEntry {
     pub fine_tuned_model: Option<String>,
     pub hyperparams: Hyperparams,
     pub organization_id: String,
-    pub result_files: Vec<FileInfo>,
+    pub result_files: Vec<FineTuneFileInfo>,
     pub status: String,
-    pub validation_files: Vec<FileInfo>,
-    pub training_files: Vec<FileInfo>,
+    pub validation_files: Vec<FineTuneFileInfo>,
+    pub training_files: Vec<FineTuneFileInfo>,
     pub updated_at: i64,
 }
 
@@ -181,13 +212,26 @@ impl From<FineTuneListEntry> for FineTuneGetRequest{
         }
     }
 }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ConversionError{
+    message:&'static str
+}
+
+impl Display for ConversionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f,"{}",self.message)
+    }
+}
+
+impl std::error::Error for ConversionError {}
+
 
 impl TryFrom<FineTuneListEntry> for FineTuneDeleteRequest{
-    type Error = &'static str;
+    type Error = ConversionError;
 
     fn try_from(value: FineTuneListEntry) -> Result<Self, Self::Error> {
         Ok(FineTuneDeleteRequest{
-            id: value.fine_tuned_model.ok_or("can only convert finished fine tune, that has fine tune model set")?
+            id: value.fine_tuned_model.ok_or(ConversionError{message:"can only convert finished fine tune, that has fine tune model set"})?
         })
     }
 }

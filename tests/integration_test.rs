@@ -2,7 +2,7 @@ extern crate openai_api;
 use std::fs;
 use anyhow::anyhow;
 use file_diff::diff;
-use openai_api::{AsyncTryInto, ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
+use openai_api::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
 use openai_api::chat::structs::*;
 use serde::Deserialize;
 use openai_api::completion::structs::{CompletionRequest};
@@ -85,8 +85,9 @@ async fn embeddings()-> Result<(),anyhow::Error> {
 }
 
 
-
+///test creates files, so it is ignored by default
 #[tokio::test]
+#[ignore]
 async fn file_upload() -> Result<(),anyhow::Error> {
     let client = get_client();
     //upload file
@@ -101,6 +102,8 @@ async fn file_upload() -> Result<(),anyhow::Error> {
     dbg!(&info);
     Ok(())
 }
+
+
 #[tokio::test]
 async fn file_list() -> Result<(),anyhow::Error> {
     let client = get_client();
@@ -110,7 +113,9 @@ async fn file_list() -> Result<(),anyhow::Error> {
     Ok(())
 }
 
+
 #[tokio::test]
+#[ignore]
 async fn file_download() -> Result<(),anyhow::Error> {
     //download file
     // IMPORTANT! downloading files are disabled for free accounts, so this wont work on free account
@@ -127,6 +132,7 @@ async fn file_download() -> Result<(),anyhow::Error> {
 }
 
 #[tokio::test]
+#[ignore]
 async fn file_delete() -> Result<(),anyhow::Error> {
     let client = get_client();
     //list uploaded files
@@ -167,19 +173,23 @@ async fn fine_tune_list() -> Result<(),anyhow::Error> {
 
 
 #[tokio::test]
+#[ignore]
 async fn file_tune_delete() -> Result<(),anyhow::Error> {
     let client = get_client();
     //list fine tunes
-    let files = FineTuneListResponse::get(&client).await?;
-    dbg!(&files);
+    let fine_tunes = FineTuneListResponse::get(&client).await?;
+    dbg!(&fine_tunes);
 
     //delete all fine tunes
     // IMPORTANT! deleting fine tune will not work immediately after creating it,
     // you will need to wait for it to finish or cancel it
-    for file in files.data{
+    // also, after model is deleted, fine-tune for it will still be there for some reason,
+    // there is nothing in documentation about deleting fine-tunes, only models
+    for file in fine_tunes.data{
         let delete_request:FineTuneDeleteRequest = file.clone().try_into()?;
         let delete_result = delete_request.run(&client).await?;
         dbg!(delete_result);
     }
     Ok(())
 }
+

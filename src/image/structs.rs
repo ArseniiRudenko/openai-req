@@ -141,7 +141,7 @@ impl AsyncTryFrom<ImageEditRequest> for reqwest::multipart::Form {
             .part("prompt", Part::text(request.prompt));
 
         if let Some(mask) = request.mask {
-            let (image,mask) = try_join!(file_to_part(&mask),file_to_part(&request.image));
+            let (mask,image)= try_join!(file_to_part(&mask),file_to_part(&request.image))?;
             form =
                 form.part("image", image)
                 .part("mask", mask);
