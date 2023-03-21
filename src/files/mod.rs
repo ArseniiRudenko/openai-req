@@ -3,8 +3,7 @@ use structs::FileListResponse;
 use super::OpenAiClient;
 use async_trait::async_trait;
 use crate::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfo, FileInfoRequest, FileUploadRequest};
-use crate::structs::DeleteResponse;
-use crate::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest};
+use crate::{ByUrlRequest, DeleteResponse, DownloadRequest, FormRequest, GetRequest};
 
 pub mod structs;
 

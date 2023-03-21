@@ -1,6 +1,5 @@
-use crate::fine_tunes::structs::{FineTuneCreateRequest, FineTune, FineTuneListResponse, FineTuneEventsResponse, FineTuneGetRequest, FineTuneCancelRequest, FineTuneEventsGetRequest, FineTuneDeleteRequest};
+use crate::fine_tunes::structs::{FineTuneCreateRequest, FineTune, FineTuneListResponse, FineTuneEventsResponse, FineTuneGetRequest, FineTuneCancelRequest, FineTuneEventsGetRequest};
 use crate::{GetRequest, JsonRequest, ByUrlRequest, OpenAiClient};
-use crate::structs::DeleteResponse;
 pub mod structs;
 use reqwest::RequestBuilder;
 
@@ -10,7 +9,6 @@ impl GetRequest for FineTuneListResponse {
 
 impl JsonRequest<FineTune> for FineTuneCreateRequest{
     const ENDPOINT: &'static str = "/fine-tunes";
-
 }
 
 impl ByUrlRequest<FineTune> for FineTuneGetRequest {
@@ -33,11 +31,3 @@ impl ByUrlRequest<FineTuneEventsResponse> for FineTuneEventsGetRequest{
 }
 
 
-impl ByUrlRequest<DeleteResponse> for FineTuneDeleteRequest {
-    const ENDPOINT: &'static str = "/models/";
-    const SUFFIX: &'static str = "";
-
-    fn builder(client:&OpenAiClient, final_url: String) -> RequestBuilder {
-        client.client.delete(final_url)
-    }
-}

@@ -4,7 +4,8 @@ use async_trait::async_trait;
 use reqwest::multipart::{Form, Part};
 use serde::{Serialize, Deserialize};
 use with_id::WithRefId;
-use crate::{AsyncTryFrom, file_to_part};
+use crate::conversions::AsyncTryFrom;
+use crate::file_to_part;
 
 #[derive(Serialize, Deserialize, Debug, Clone, WithRefId)]
 pub struct FileInfo {

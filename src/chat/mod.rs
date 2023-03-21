@@ -1,9 +1,7 @@
-use structs::{ChatRequest, ChatSuccess};
 use async_trait::async_trait;
-use crate::JsonRequest;
+use crate::{JsonRequest, Usage};
 use std::collections::HashMap;
 use serde::{Serialize,Deserialize};
-use crate::structs::Usage;
 
 #[derive(Clone, Debug,Serialize,Deserialize)]
 #[serde(rename_all = "lowercase")]

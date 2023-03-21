@@ -1,20 +1,20 @@
-extern crate openai_api;
+extern crate openai_req;
 use std::fs;
 use std::path::PathBuf;
 use anyhow::anyhow;
 use file_diff::diff;
-use openai_api::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
-use openai_api::chat::structs::*;
 use serde::Deserialize;
-use openai_api::audio::{Iso639_1, TranscriptionRequest, TranslationRequest};
-use openai_api::chat::{ChatRequest, Message, Role};
-use openai_api::completion::structs::{CompletionRequest};
-use openai_api::edit::structs::EditRequest;
-use openai_api::embeddings::structs::EmbeddingRequest;
-use openai_api::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FileListResponse, FileUploadRequest};
-use openai_api::fine_tunes::structs::{FineTuneCreateRequest, FineTuneDeleteRequest, FineTuneListResponse};
-use openai_api::moderations::structs::ModerationRequest;
-use openai_api::structs::{Input, ModelListResponse};
+use openai_req::chat::{ChatRequest, Message, Role};
+use openai_req::edit::EditRequest;
+use openai_req::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
+use openai_req::audio::{Iso639_1, TranscriptionRequest, TranslationRequest};
+use openai_req::completion::CompletionRequest;
+use openai_req::embeddings::EmbeddingRequest;
+use openai_req::files::structs::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FileListResponse, FileUploadRequest};
+use openai_req::fine_tunes::structs::{FineTuneCreateRequest, FineTuneListResponse};
+use openai_req::model::{ModelDeleteRequest, ModelListResponse};
+use openai_req::moderations::ModerationRequest;
+
 
 #[derive(Deserialize)]
 struct Config{
@@ -60,8 +60,7 @@ async fn edit()-> Result<(),anyhow::Error> {
 #[tokio::test]
 async fn completion()-> Result<(),anyhow::Error> {
     let client = get_client();
-    let prompt = Input::String("long long time ago".to_string());
-    let completion_request = CompletionRequest::new(prompt);
+    let completion_request = CompletionRequest::new("long long time ago".into());
     let response =
         completion_request.run(&client).await?;
     dbg!(response);
@@ -190,7 +189,7 @@ async fn file_tune_model_delete() -> Result<(),anyhow::Error> {
     // also, after model is deleted, fine-tune for it will still be there for some reason,
     // there is nothing in documentation about deleting fine-tunes, only models
     for file in fine_tunes.data{
-        let delete_request:FineTuneDeleteRequest = file.clone().try_into()?;
+        let delete_request: ModelDeleteRequest = file.clone().try_into()?;
         let delete_result = delete_request.run(&client).await?;
         dbg!(delete_result);
     }

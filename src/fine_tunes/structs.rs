@@ -1,4 +1,3 @@
-use std::fmt::{Display, Formatter};
 use crate::files::structs::FileInfo;
 use serde::{Serialize,Deserialize};
 use with_id::WithRefId;
@@ -200,50 +199,12 @@ pub struct FineTuneEventsGetRequest{
     pub id: String
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
-pub struct FineTuneDeleteRequest{
-    pub id: String
-}
 
 impl From<FineTuneListEntry> for FineTuneGetRequest{
     fn from(value: FineTuneListEntry) -> Self {
         FineTuneGetRequest{
             id: value.id
         }
-    }
-}
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ConversionError{
-    message:&'static str
-}
-
-impl Display for ConversionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f,"{}",self.message)
-    }
-}
-
-impl std::error::Error for ConversionError {}
-
-
-impl TryFrom<FineTuneListEntry> for FineTuneDeleteRequest{
-    type Error = ConversionError;
-
-    fn try_from(value: FineTuneListEntry) -> Result<Self, Self::Error> {
-        Ok(FineTuneDeleteRequest{
-            id: value.fine_tuned_model.ok_or(ConversionError{message:"can only convert finished fine tune, that has fine tune model set"})?
-        })
-    }
-}
-
-impl TryFrom<FineTune> for FineTuneDeleteRequest{
-
-    type Error = &'static str;
-
-    fn try_from(value: FineTune) -> Result<Self, Self::Error> {
-        Ok(FineTuneDeleteRequest{
-            id: value.fine_tuned_model.ok_or("can only convert finished fine tune, that has fine tune model set")?
-        })
     }
 }
 

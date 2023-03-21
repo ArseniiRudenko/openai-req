@@ -3,7 +3,7 @@ use std::io;
 use std::path::{PathBuf};
 use reqwest::multipart::{Form, Part};
 use serde::{Serialize,Deserialize};
-use crate::{AsyncTryFrom, file_to_part};
+use crate::file_to_part;
 use async_trait::async_trait;
 
 #[derive(Clone, Debug,Serialize,Deserialize)]
@@ -38,8 +38,8 @@ pub struct AudioResponse{
 ///```
 ///
 /// use std::path::PathBuf;
-/// use openai_api::audio::TranscriptionRequest;
-/// use openai_api::FormRequest;
+/// use openai_req::audio::{Iso639_1, TranscriptionRequest};
+/// use openai_req::FormRequest;
 ///
 ///   let req =TranscriptionRequest::new(PathBuf::from("tests/Linus-linux.mp3"))
 ///         .language(Iso639_1::En);
@@ -156,8 +156,8 @@ impl TranscriptionRequest {
 ///```
 ///
 /// use std::path::PathBuf;
-/// use openai_api::audio::TranslationRequest;
-/// use openai_api::FormRequest;
+/// use openai_req::audio::TranslationRequest;
+/// use openai_req::FormRequest;
 /// let req = TranslationRequest::new(PathBuf::from("tests/Linus-linux.mp3"));
 ///     let res = req.run(&client).await?;
 /// ```
@@ -249,6 +249,7 @@ impl TranslationRequest {
 
 
 use strum_macros::Display;
+use crate::conversions::AsyncTryFrom;
 
 #[derive(Clone, Debug, PartialEq, Display, Serialize, Deserialize)]
 #[strum(serialize_all = "lowercase")]

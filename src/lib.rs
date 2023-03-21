@@ -1,13 +1,14 @@
 pub mod chat;
 pub mod completion;
 pub mod edit;
-pub mod structs;
 pub mod image;
 pub mod files;
 pub mod embeddings;
 pub mod fine_tunes;
 pub mod moderations;
 pub mod audio;
+pub mod model;
+mod conversions;
 
 use anyhow::Result;
 use std::io;
@@ -19,15 +20,16 @@ use futures_util::TryFutureExt;
 use reqwest::{Body, Client, multipart, RequestBuilder, Response};
 use reqwest::multipart::Part;
 use serde::de::DeserializeOwned;
-use serde::ser::StdError;
-use serde::Serialize;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio::try_join;
 use tokio_stream::{Stream, StreamExt};
 use tokio_util::codec::{BytesCodec, FramedRead};
 use with_id::WithRefId;
-use crate::structs::{Error, ErrorResponse, Model, ModelRequest, ModelListResponse};
+use std::fmt::{Debug, Display, Formatter};
+use serde::{Serialize, Deserialize};
+use crate::conversions::AsyncTryInto;
+
 
 /// This is main client structure required for all requests,
 /// it is passed as a reference parameter into operations
@@ -76,6 +78,120 @@ impl OpenAiClient {
     }
 }
 
+///common error type used by api client traits, wraps underlying reqwest::Error,
+///but also tries to provide response body, so error is easier to debug
+#[derive(Debug)]
+pub struct Error{
+    pub(crate) response:ErrorResponse,
+    pub(crate) inner:reqwest::Error
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f,"{}",self.response)
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.inner)
+    }
+}
+
+/// catch-all for error responses from API, tries to deserialize API error,
+/// falls back to string if unable to
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum ErrorResponse{
+    ApiError(ApiError),
+    OtherError(String)
+}
+
+
+impl Display for ErrorResponse {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ErrorResponse::ApiError(a) => write!(f,"{}",a),
+            ErrorResponse::OtherError(s) => write!(f,"{}",s)
+        }
+    }
+}
+
+///structure returned by OpenAI for errors
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ApiError {
+    pub error: ApiErrorDetails
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename(serialize = "error"))]
+#[serde(rename(deserialize = "error"))]
+pub struct ApiErrorDetails {
+    pub message: String,
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub param: Option<String>,
+    pub code: Option<String>
+}
+
+impl Display for ApiError{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self.error.param {
+            None => match &self.error.code {
+                None => write!(f,"{}",self.error.message),
+                Some(code) => write!(f,"{}, code:{}",self.error.message,code)
+            }
+            Some(param) => match &self.error.code {
+                None => write!(f,"{}, param:{}",self.error.message,param),
+                Some(code) => write!(f,"{}, param:{}, code: {}",self.error.message,param,code)
+            }
+        }
+    }
+}
+
+///enum used by different requests,
+/// it is common for apis ot take either single string or array of tokens
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+pub enum Input {
+    String(String),
+    StringArray(Vec<String>)
+}
+
+impl From<String> for Input{
+    fn from(value:String) -> Self {
+        Input::String(value)
+    }
+}
+
+impl From<&str> for Input{
+    fn from(value:&str) -> Self {
+        Input::String(value.to_string())
+    }
+}
+
+impl From<Vec<String>> for Input{
+    fn from(value: Vec<String>) -> Self {
+        Input::StringArray(value)
+    }
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DeleteResponse {
+    pub id: String,
+    pub object: String,
+    pub deleted: bool,
+}
+
+///common struct that comes up in responses
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Usage{
+    pub prompt_tokens: u64,
+    pub completion_tokens: u64,
+    pub total_tokens: u64
+}
+
 async fn process_response<T:DeserializeOwned>(response: Response) ->Result<T>{
     let code = response.error_for_status_ref();
     return match code {
@@ -108,7 +224,6 @@ pub trait JsonRequest<TRes: DeserializeOwned>: Serialize + Sized + Sync{
         process_response::<TRes>(res).await
     }
 }
-
 
 #[async_trait]
 pub trait ByUrlRequest<TRes: DeserializeOwned>:WithRefId<str>+Sync{
@@ -197,45 +312,6 @@ pub trait DownloadRequest: WithRefId<str>{
 
 }
 
-
-impl GetRequest for ModelListResponse {
-    const ENDPOINT: &'static str = "/models";
-}
-
-impl ByUrlRequest<Model> for ModelRequest{
-    const ENDPOINT: &'static str = "/models/";
-    const SUFFIX: &'static str = "";
-}
-
-
-#[async_trait]
-pub trait AsyncTryFrom<T>: Sized {
-
-    type Error: 'static+StdError+Send+Sync;
-
-    async fn try_from(value: T) -> Result<Self, Self::Error>;
-}
-
-#[async_trait]
-pub trait AsyncTryInto<T>: Sized {
-
-    type Error: 'static+StdError+Send+Sync;
-
-    async fn try_into(self) -> Result<T, Self::Error>;
-}
-
-#[async_trait]
-impl<T, U> AsyncTryInto<U> for T
-    where
-        U: AsyncTryFrom<T>,
-        T: Send
-{
-    type Error = U::Error;
-
-    async fn try_into(self) -> Result<U, Self::Error>{
-        U::try_from(self).await
-    }
-}
 
 
 pub(crate) async fn file_to_part(path: &PathBuf) -> io::Result<Part> {
