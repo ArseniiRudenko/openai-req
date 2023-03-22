@@ -1,6 +1,6 @@
 # openai-req
 OpenAI API client implemented using tokio and reqwest.
-Refer to tests folder ni the repo or to code comments for usage examples.
+Refer to tests folder in the repo or to code comments for usage examples.
 
 ## Usage.
 - Import library
