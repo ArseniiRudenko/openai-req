@@ -6,7 +6,7 @@ Refer to tests folder in the repo or to code comments for usage examples.
 - Import library
    ```toml
    [dependencies]
-   openai-req="1"
+   openai-req="2"
    ```
 - First you will need to construct client. Minimal client only requires API key. Here is a simple example with reading key from toml file.
 
