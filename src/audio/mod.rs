@@ -1,17 +1,22 @@
-use crate::FormRequest;
+use crate::{FormRequest, OpenAiClient, process_response, process_text_response};
 use std::io;
 use std::path::{PathBuf};
 use reqwest::multipart::{Form, Part};
 use serde::{Serialize,Deserialize};
 use crate::file_to_part;
 use async_trait::async_trait;
+use anyhow::Result;
+use futures_util::TryFutureExt;
+use reqwest::Response;
+use strum_macros::Display;
+use crate::conversions::AsyncTryFrom;
 
-#[derive(Clone, Debug,Serialize,Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ResponseFormat{
     Json,
+    VerboseJson,
     Text,
     Srt,
-    VerboseJson,
     Vtt
 }
 
@@ -28,9 +33,45 @@ impl ToString for ResponseFormat {
 }
 
 
-#[derive(Clone, Debug,Serialize,Deserialize)]
-pub struct AudioResponse{
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum AudioResponse{
+    Json(ShortAudioResponse),
+    VerboseJson(VerboseAudioResponse),
+    Text(String),
+    Srt(String),
+    Vtt(String)
+}
+
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ShortAudioResponse{
     pub text:String
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Segment {
+    pub id: i64,
+    pub seek: i64,
+    pub start: f64,
+    pub end: f64,
+    pub text: String,
+    pub tokens: Vec<i64>,
+    pub temperature: f64,
+    pub avg_logprob: f64,
+    pub compression_ratio: f64,
+    pub no_speech_prob: f64,
+    pub transient: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct VerboseAudioResponse {
+    pub task: String,
+    pub language: String,
+    pub duration: f64,
+    pub segments: Vec<Segment>,
+    pub text: String,
 }
 
 ///request that provides transcription for given audio file
@@ -43,12 +84,12 @@ pub struct AudioResponse{
 /// use openai_req::audio::{Iso639_1, TranscriptionRequest};
 /// use openai_req::FormRequest;
 ///
-///   let req =TranscriptionRequest::new(PathBuf::from("tests/Linus-linux.mp3"))
+///   let req = TranscriptionRequest::new(PathBuf::from("tests/Linus-linux.mp3"))
 ///         .language(Iso639_1::En);
 ///   let res = req.run(&client).await?;
 ///
 /// ```
-#[derive(Clone, Debug,Serialize,Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TranscriptionRequest{
     file: PathBuf,
     model: String,
@@ -58,8 +99,15 @@ pub struct TranscriptionRequest{
     language: Option<Iso639_1>
 }
 
+#[async_trait]
 impl FormRequest<AudioResponse> for TranscriptionRequest{
     const ENDPOINT: &'static str = "/audio/transcriptions";
+
+    async fn run(&self, client:&OpenAiClient)-> Result<AudioResponse>{
+        let final_url =  client.url.to_owned()+Self::ENDPOINT;
+        let res = self.get_response(&client.client,final_url,&client.key).await?;
+        process_audio_response(&self.response_format,res).await
+    }
 }
 
 
@@ -92,7 +140,6 @@ impl AsyncTryFrom<TranscriptionRequest> for Form {
         Ok(form)
     }
 }
-
 
 
 impl TranscriptionRequest {
@@ -165,7 +212,7 @@ impl TranscriptionRequest {
 /// let req = TranslationRequest::new(PathBuf::from("tests/Linus-linux.mp3"));
 /// let res = req.run(&client).await?;
 /// ```
-#[derive(Clone, Debug,Serialize,Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TranslationRequest{
     file: PathBuf,
     model: String,
@@ -174,8 +221,15 @@ pub struct TranslationRequest{
     temperature: Option<f64>
 }
 
+#[async_trait]
 impl FormRequest<AudioResponse> for TranslationRequest{
     const ENDPOINT: &'static str = "/audio/translations";
+
+    async fn run(&self, client:&OpenAiClient)-> Result<AudioResponse>{
+        let final_url =  client.url.to_owned()+Self::ENDPOINT;
+        let res = self.get_response(&client.client,final_url,&client.key).await?;
+        process_audio_response(&self.response_format,res).await
+    }
 }
 
 
@@ -252,8 +306,7 @@ impl TranslationRequest {
 }
 
 
-use strum_macros::Display;
-use crate::conversions::AsyncTryFrom;
+
 
 #[derive(Clone, Debug, PartialEq, Display, Serialize, Deserialize)]
 #[strum(serialize_all = "lowercase")]
@@ -630,3 +683,15 @@ pub enum Iso639_1 {
 
 
 
+async fn process_audio_response(resp_format:&Option<ResponseFormat>,res:Response)-> Result<AudioResponse>{
+    match resp_format {
+        None => process_response::<ShortAudioResponse>(res).map_ok(AudioResponse::Json).await,
+        Some(format) => match format {
+            ResponseFormat::Json => process_response::<ShortAudioResponse>(res).map_ok(AudioResponse::Json).await,
+            ResponseFormat::VerboseJson => process_response::<VerboseAudioResponse>(res).map_ok(AudioResponse::VerboseJson).await,
+            ResponseFormat::Text => process_text_response(res).map_ok(AudioResponse::Text).await,
+            ResponseFormat::Srt => process_text_response(res).map_ok(AudioResponse::Srt).await,
+            ResponseFormat::Vtt => process_text_response(res).map_ok(AudioResponse::Vtt).await
+        }
+    }
+}

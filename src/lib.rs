@@ -89,7 +89,7 @@ impl OpenAiClient {
 ///but also tries to provide response body, so error is easier to debug
 #[derive(Debug)]
 pub struct Error{
-    pub(crate) response:ErrorResponse,
+    pub(crate) response:ApiError,
     pub(crate) inner:reqwest::Error
 }
 
@@ -105,24 +105,6 @@ impl std::error::Error for Error {
     }
 }
 
-/// catch-all for error responses from API, tries to deserialize API error,
-/// falls back to string if unable to
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(untagged)]
-pub enum ErrorResponse{
-    ApiError(ApiError),
-    OtherError(String)
-}
-
-
-impl Display for ErrorResponse {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ErrorResponse::ApiError(a) => write!(f,"{}",a),
-            ErrorResponse::OtherError(s) => write!(f,"{}",s)
-        }
-    }
-}
 
 ///structure returned by OpenAI for errors
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -256,13 +238,21 @@ pub trait FormRequest<TRes: DeserializeOwned> : AsyncTryInto<multipart::Form>+Cl
 
     const ENDPOINT: &'static str;
 
-    async fn run(&self, client:&OpenAiClient)-> Result<TRes>{
-        let final_url =  client.url.to_owned()+Self::ENDPOINT;
-        let res = client.client.post(final_url)
-            .bearer_auth(client.key.clone())
+    async fn get_response(&self,
+                          client:&Client,
+                          final_url:String,
+                          key:&str
+    ) -> Result<Response> {
+        client.post(final_url)
+            .bearer_auth(key.clone())
             .multipart(AsyncTryInto::try_into(self.clone()).await?)
             .send()
-            .await?;
+            .await.map_err(anyhow::Error::new)
+    }
+
+    async fn run(&self, client:&OpenAiClient)-> Result<TRes>{
+        let final_url =  client.url.to_owned()+Self::ENDPOINT;
+        let res = self.get_response(&client.client,final_url,&client.key).await?;
         process_response::<TRes>(res).await
     }
 }
@@ -284,7 +274,7 @@ pub trait DownloadRequest: WithRefId<str>{
             Ok(_) => Ok(Box::pin(res.bytes_stream())),
             Err(err) =>
                 Err(Error {
-                    response: res.json::<ErrorResponse>().await?,
+                    response: res.json::<ApiError>().await?,
                     inner: err
                 })?
         }
@@ -302,21 +292,40 @@ pub trait DownloadRequest: WithRefId<str>{
 
 }
 
-async fn process_response<T:DeserializeOwned>(response: Response) ->Result<T>{
+pub(crate) async fn process_response<T:DeserializeOwned>(response: Response) ->Result<T>{
     let code = response.error_for_status_ref();
     match code {
         Ok(_) =>{
             let full = response.text().await?;
+            dbg!(&full);
             serde_json::from_str(&full)
                 .map_err(|err| anyhow::Error::new(err).context(full))
         }
         Err(err) =>
             Err(Error {
-                response: response.json::<ErrorResponse>().await?,
+                response: response.json::<ApiError>().await?,
                 inner: err
             })?
     }
 }
+
+
+pub(crate) async fn process_text_response(response: Response) ->Result<String>{
+    let code = response.error_for_status_ref();
+    match code {
+        Ok(_) =>{
+            response.text().await.map_err(anyhow::Error::new)
+        }
+        Err(err) =>
+            Err(Error {
+                response: response.json::<ApiError>().await?,
+                inner: err
+            })?
+    }
+}
+
+
+
 
 pub(crate) async fn file_to_part(path: &PathBuf) -> io::Result<Part> {
     let name = path.file_name()

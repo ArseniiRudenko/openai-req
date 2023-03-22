@@ -74,9 +74,7 @@ Usually that type is called  *Something*ListResponse:
        download_request.download_to_file(&client, "fine-tune2.json").await
     }  
    ```
-## Implementation notes
-- For transcriptions and translations currently only json response format is supported.
-
+  
 ## Supported APIs:
 1. Models:
     - List

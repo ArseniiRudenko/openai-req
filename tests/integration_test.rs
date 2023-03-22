@@ -4,10 +4,11 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 use file_diff::diff;
 use serde::Deserialize;
+use tokio::try_join;
 use openai_req::*;
 use openai_req::chat::{ChatRequest, Message, Role};
 use openai_req::edit::EditRequest;
-use openai_req::audio::{Iso639_1, TranscriptionRequest, TranslationRequest};
+use openai_req::audio::{Iso639_1, ResponseFormat, TranscriptionRequest, TranslationRequest};
 use openai_req::completion::CompletionRequest;
 use openai_req::embeddings::EmbeddingRequest;
 use openai_req::files::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FileListResponse, FileUploadRequest};
@@ -217,15 +218,30 @@ async fn moderation() -> Result<(),anyhow::Error> {
 ///you'll need to provide your own audio file, so test is ignored by default
 #[tokio::test]
 #[ignore]
-async fn transcription() -> Result<(),anyhow::Error> {
+async fn transcription_text() -> Result<(),anyhow::Error> {
     let client = get_client();
     let req =
         TranscriptionRequest::new(PathBuf::from("test_resources/Linus-linux.mp3"))
         .language(Iso639_1::En);
-    let res = req.run(&client).await?;
-    dbg!(res);
+    let req1= req.clone().response_format(ResponseFormat::Text);
+    let req2= req.clone().response_format(ResponseFormat::Srt);
+    let req3= req.clone().response_format(ResponseFormat::Vtt);
+    let req4= req.clone().response_format(ResponseFormat::VerboseJson);
+    let res1 = req1.run(&client);
+    let res2 = req2.run(&client);
+    let res3 = req3.run(&client);
+    let res4 = req4.run(&client);
+
+    let (res1,res2,res3,res4) = try_join!(res1,res2,res3,res4)?;
+    dbg!(res1);
+    dbg!(res2);
+    dbg!(res3);
+    dbg!(res4);
     Ok(())
 }
+
+
+
 
 ///Translate audio file into english.
 ///you'll need to provide your own audio file, so test is ignored by default
@@ -236,8 +252,20 @@ async fn translation() -> Result<(),anyhow::Error> {
     let client = get_client();
     let req =
         TranslationRequest::new(PathBuf::from("test_resources/Linus-linux.mp3"));
-    let res = req.run(&client).await?;
-    dbg!(res);
+    let req1= req.clone().response_format(ResponseFormat::Text);
+    let req2= req.clone().response_format(ResponseFormat::Srt);
+    let req3= req.clone().response_format(ResponseFormat::Vtt);
+    let req4= req.clone().response_format(ResponseFormat::VerboseJson);
+    let res1 = req1.run(&client);
+    let res2 = req2.run(&client);
+    let res3 = req3.run(&client);
+    let res4 = req4.run(&client);
+
+    let (res1,res2,res3,res4) = try_join!(res1,res2,res3,res4)?;
+    dbg!(res1);
+    dbg!(res2);
+    dbg!(res3);
+    dbg!(res4);
     Ok(())
 }
 
