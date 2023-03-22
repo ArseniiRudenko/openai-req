@@ -17,3 +17,6 @@ Cargo.lock
 
 # config file with api key
 key.toml
+
+#test resorces that are not needed in repo
+/test_resources/
