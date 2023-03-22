@@ -31,8 +31,15 @@ use serde::{Serialize, Deserialize};
 use crate::conversions::AsyncTryInto;
 
 
-/// This is main client structure required for all requests,
-/// it is passed as a reference parameter into operations
+/// This is main client structure required for all requests.
+/// It is passed as a reference parameter into all API operations.
+/// It is also holds actual `reqwest::Client` http client, that performs requests.
+/// # Usage example
+/// ```
+/// use openai_req::OpenAiClient;
+///
+/// let client = OpenAiClient::new("{YOUR_API_KEY}");
+/// ```
 #[derive(Debug, Clone)]
 pub struct OpenAiClient {
     url:String,
@@ -67,7 +74,7 @@ impl OpenAiClient {
     }
 
 
-    /// this constructor allows you to pass custom everything, changing client,
+    /// this constructor allows you to customise everything:  client,
     /// key and base url for all requests
     pub fn with_url_and_client(key: &str, url: &str, client: &Client)->Self{
         OpenAiClient {
@@ -176,7 +183,7 @@ impl From<Vec<String>> for Input{
     }
 }
 
-
+///common response used by multiple delete API-s
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DeleteResponse {
     pub id: String,
@@ -191,23 +198,6 @@ pub struct Usage{
     pub completion_tokens: u64,
     pub total_tokens: u64
 }
-
-async fn process_response<T:DeserializeOwned>(response: Response) ->Result<T>{
-    let code = response.error_for_status_ref();
-    return match code {
-        Ok(_) =>{
-            let full = response.text().await?;
-             serde_json::from_str(&full)
-                 .map_err(|err| anyhow::Error::new(err).context(full))
-        }
-        Err(err) =>
-            Err(Error {
-                response: response.json::<ErrorResponse>().await?,
-                inner: err
-            })?
-    }
-}
-
 
 #[async_trait]
 pub trait JsonRequest<TRes: DeserializeOwned>: Serialize + Sized + Sync{
@@ -301,7 +291,7 @@ pub trait DownloadRequest: WithRefId<str>{
     }
 
     async fn download_to_file(&self, client:&OpenAiClient, target_path:&str) -> Result<()>{
-        let file = File::create(target_path).map_err(|e| anyhow::Error::new(e));
+        let file = File::create(target_path).map_err(anyhow::Error::new);
         let stream = self.download(client);
         let (mut file, mut stream) = try_join!(file, stream)?;
         while let Some(chunk) = stream.next().await {
@@ -312,7 +302,21 @@ pub trait DownloadRequest: WithRefId<str>{
 
 }
 
-
+async fn process_response<T:DeserializeOwned>(response: Response) ->Result<T>{
+    let code = response.error_for_status_ref();
+    match code {
+        Ok(_) =>{
+            let full = response.text().await?;
+            serde_json::from_str(&full)
+                .map_err(|err| anyhow::Error::new(err).context(full))
+        }
+        Err(err) =>
+            Err(Error {
+                response: response.json::<ErrorResponse>().await?,
+                inner: err
+            })?
+    }
+}
 
 pub(crate) async fn file_to_part(path: &PathBuf) -> io::Result<Part> {
     let name = path.file_name()

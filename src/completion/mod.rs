@@ -3,7 +3,18 @@ use crate::{Input, JsonRequest, Usage};
 use std::collections::HashMap;
 use serde::{Serialize,Deserialize};
 
-///text completion request as defined by https://platform.openai.com/docs/api-reference/completions
+///text completion request
+///detailed description of params at https://platform.openai.com/docs/api-reference/completions
+///
+/// # Usage example
+///```
+///    use openai_req::completion::CompletionRequest;
+///    use openai_req::JsonRequest;
+///
+///    let completion_request =
+///         CompletionRequest::new("long long time ago".into());
+///     let response = completion_request.run(&client).await?;
+/// ```
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CompletionRequest {
     model: String,

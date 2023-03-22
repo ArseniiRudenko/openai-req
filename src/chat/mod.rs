@@ -28,8 +28,8 @@ pub enum StopSeq{
 /// https://platform.openai.com/docs/api-reference/chat
 /// # Usage example
 /// ```
-/// use openai_api::chat::{ChatRequest, Message, Role};
-/// use openai_api::JsonRequest;
+/// use openai_req::chat::{ChatRequest, Message, Role};
+/// use openai_req::JsonRequest;
 ///
 /// let messages  = vec!(Message{
 ///      role: Role::User,

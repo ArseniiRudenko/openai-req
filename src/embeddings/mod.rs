@@ -3,6 +3,15 @@ use crate::{Input, JsonRequest};
 use serde::{Serialize,Deserialize};
 
 ///embedding request as defiled by https://platform.openai.com/docs/api-reference/embeddings
+/// # Usage example
+///```
+/// use openai_req::embeddings::EmbeddingRequest;
+/// use openai_req::JsonRequest;
+///
+/// let embedding_request =
+///     EmbeddingRequest::new("The food was delicious and the waiter...".into());
+/// let response = embedding_request.run(&client).await?;
+/// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EmbeddingRequest{
     pub model:String,

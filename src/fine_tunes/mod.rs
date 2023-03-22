@@ -1,14 +1,21 @@
 use crate::{GetRequest, JsonRequest, ByUrlRequest, OpenAiClient};
-pub mod structs;
+
 use reqwest::RequestBuilder;
 
-
+use derive_more::*;
 use serde::{Serialize,Deserialize};
 use with_id::WithRefId;
-use crate::files::FileInfo;
 
 
 ///create fine-tune request as in https://platform.openai.com/docs/api-reference/fine-tunes/create
+/// # Usage example
+///```
+/// use openai_req::ByUrlRequest;
+/// use openai_req::files::FileInfoRequest;
+///
+/// let info_request= FileInfoRequest::new("training_file_id".to_string());
+/// let info = info_request.run(&client).await?;
+/// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FineTuneCreateRequest {
     training_file: String,
@@ -114,8 +121,17 @@ impl FineTuneCreateRequest {
     }
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+/// Cancel fine tune request.
+/// Details at https://platform.openai.com/docs/api-reference/fine-tunes/cancel
+/// # Usage example
+/// ```
+/// use openai_req::ByUrlRequest;
+/// use openai_req::fine_tunes::FineTuneCancelRequest;
+///
+/// let request = FineTuneCancelRequest::new("fine_tune_id".to_string());
+/// let result = request.run(&client).await?;
+/// ```
+#[derive(Serialize, Deserialize, Debug, Clone,WithRefId, Constructor)]
 pub struct FineTuneCancelRequest{
     id:String
 }
@@ -145,24 +161,19 @@ impl ByUrlRequest<FineTune> for FineTuneCancelRequest {
     }
 }
 
-///get list of all fine-tunes, no request required, has  static `::get(&client)` method
+///Get list of all available fine-tunes
+/// Details at https://platform.openai.com/docs/api-reference/fine-tunes/list
+/// # Usage example
+///```
+/// use openai_req::fine_tunes::FineTuneListResponse;
+/// use openai_req::GetRequest;
+///
+/// let fine_tunes = FineTuneListResponse::get(&client).await?;
+/// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FineTuneListResponse {
     pub object: String,
     pub data: Vec<FineTuneListEntry>
-}
-
-impl From<FineTuneFileInfo> for FileInfo{
-    fn from(value: FineTuneFileInfo) -> Self {
-        FileInfo{
-            id: value.id,
-            object: value.object,
-            bytes: value.bytes,
-            created_at: value.created_at,
-            filename: value.filename,
-            purpose: value.purpose,
-        }
-    }
 }
 
 impl GetRequest for FineTuneListResponse {
@@ -186,10 +197,19 @@ pub struct FineTuneListEntry {
 }
 
 
-
-#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+///Get information about single fine tune.
+/// Details at https://platform.openai.com/docs/api-reference/fine-tunes/retrieve
+/// # Usage example
+///```
+/// use openai_req::ByUrlRequest;
+/// use openai_req::fine_tunes::FineTuneGetRequest;
+///
+/// let req = FineTuneGetRequest::new("fine_tune_id".to_string());
+/// let res = req.run(&client).await?;
+/// ```
+#[derive(Serialize, Deserialize, Debug, Clone,WithRefId, Constructor)]
 pub struct FineTuneGetRequest{
-    pub id: String
+    id: String
 }
 
 impl From<FineTuneListEntry> for FineTuneGetRequest{
@@ -205,7 +225,7 @@ impl ByUrlRequest<FineTune> for FineTuneGetRequest {
     const SUFFIX: &'static str = "";
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, WithRefId)]
 pub struct FineTune {
     pub id: String,
     pub object: String,
@@ -240,7 +260,8 @@ pub struct FineTuneEvent {
     pub message: String,
 }
 
-///same as file info, but also provides status information in context of fine tune
+///Provides same fields as files::FileInfo(and can be converted `.into()` it)
+///but also provides additional status information in context of fine-tune.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FineTuneFileInfo{
     pub id: String,
@@ -253,10 +274,19 @@ pub struct FineTuneFileInfo{
     pub status_details: Option<String>
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+/// Get fine-tune events for certain fine-tune.
+/// More details at https://platform.openai.com/docs/api-reference/fine-tunes/events
+/// # Usage example
+/// ```
+/// use openai_req::ByUrlRequest;
+/// use openai_req::fine_tunes::FineTuneEventsGetRequest;
+///
+/// let req = FineTuneEventsGetRequest::new("fine_tune_id".to_string());
+/// let events = req.run(&client).await?;
+/// ```
+#[derive(Serialize, Deserialize, Debug, Clone, WithRefId, Constructor)]
 pub struct FineTuneEventsGetRequest{
-    pub id: String
+    id: String
 }
 
 impl From<FineTuneListEntry> for FineTuneEventsGetRequest{

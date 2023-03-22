@@ -4,14 +4,15 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 use file_diff::diff;
 use serde::Deserialize;
+use openai_req::*;
 use openai_req::chat::{ChatRequest, Message, Role};
 use openai_req::edit::EditRequest;
-use openai_req::{ByUrlRequest, DownloadRequest, FormRequest, GetRequest, JsonRequest, OpenAiClient};
 use openai_req::audio::{Iso639_1, TranscriptionRequest, TranslationRequest};
 use openai_req::completion::CompletionRequest;
 use openai_req::embeddings::EmbeddingRequest;
 use openai_req::files::{FileDeleteRequest, FileDownloadRequest, FileInfoRequest, FileListResponse, FileUploadRequest};
-use openai_req::fine_tunes::{FineTuneCreateRequest, FineTuneListResponse};
+use openai_req::fine_tunes::{FineTuneCreateRequest, FineTuneEventsGetRequest, FineTuneListResponse};
+use openai_req::image::{ImageEditRequest, ImageRequest, ImageSize, ImageVariationRequest};
 use openai_req::model::{ModelDeleteRequest, ModelListResponse};
 use openai_req::moderations::ModerationRequest;
 
@@ -94,13 +95,11 @@ async fn embeddings()-> Result<(),anyhow::Error> {
 async fn file_upload() -> Result<(),anyhow::Error> {
     let client = get_client();
     //upload file
-    let file = FileUploadRequest::with_str("tests/fine-tune.json","fine-tune");
+    let file = FileUploadRequest::with_str("tests/fine-tune.json","fine-tune")?;
     let response = file.run(&client).await?;
     dbg!(&response);
     //get info about single file
-    let info_request=FileInfoRequest{
-        file_id: response.id
-    };
+    let info_request= FileInfoRequest::new(response.id);
     let info= info_request.run(&client).await?;
     dbg!(&info);
     Ok(())
@@ -174,6 +173,18 @@ async fn fine_tune_list() -> Result<(),anyhow::Error> {
     Ok(())
 }
 
+
+#[tokio::test]
+async fn fine_tune_events() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    let lst = FineTuneListResponse::get(&client).await?;
+    let first = lst.data.first().expect("no fine tunes found");
+    let req = FineTuneEventsGetRequest::new(first.id.to_string());
+    let events = req.run(&client).await?;
+    dbg!(events);
+    Ok(())
+}
+
 ///deletes all fine tunes, destructive, so disabled by default
 /// IMPORTANT! deleting fine tune model will not work immediately after creating fine-tune,
 /// you will need to wait for it to finish
@@ -218,11 +229,12 @@ async fn transcription() -> Result<(),anyhow::Error> {
     Ok(())
 }
 
+///Translate audio file into english.
 ///you'll need to provide your own audio file, so test is ignored by default
 #[tokio::test]
 #[ignore]
 async fn translation() -> Result<(),anyhow::Error> {
-    //translate into english
+
     let client = get_client();
     let req =
         TranslationRequest::new(PathBuf::from("tests/Linus-linux.mp3"));
@@ -230,3 +242,49 @@ async fn translation() -> Result<(),anyhow::Error> {
     dbg!(res);
     Ok(())
 }
+
+///generate image from the prompt
+#[tokio::test]
+async fn image_gen() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    let prompt = "logo for rust library, providing access to web API".to_string();
+    let req = ImageRequest::new(prompt).size(ImageSize::S256);
+    let res = req.run(&client).await?;
+    dbg!(res);
+    Ok(())
+}
+
+///generate image variation, you need to provide your own image path, so disabled by default
+#[tokio::test]
+#[ignore]
+async fn image_var() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    let image_path =PathBuf::from("tests/generated.png");
+    let req = ImageVariationRequest::new(image_path)?.size(ImageSize::S256);
+    let res = req.run(&client).await?;
+    dbg!(res);
+    Ok(())
+}
+
+
+///Generate image edit, you need to provide your own image, so disabled by default.
+///You don't have to provide mask, but if you don't, your image must have transparency,
+///as image itself will be used as a mask.
+#[tokio::test]
+#[ignore]
+async fn image_edit() -> Result<(),anyhow::Error> {
+    let client = get_client();
+    let image_path =PathBuf::from("tests/generated.png");
+    let mask_path =PathBuf::from("tests/mask.png");
+    let prompt = "remove text".to_string();
+    let req = ImageEditRequest::new(image_path,prompt)?
+        .size(ImageSize::S256)
+        .mask(mask_path)?;
+    let res = req.run(&client).await?;
+    dbg!(res);
+    Ok(())
+}
+
+
+
+

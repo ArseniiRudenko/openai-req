@@ -10,7 +10,17 @@ use tokio::try_join;
 use crate::conversions::AsyncTryFrom;
 use crate::file_to_part;
 
-
+///Generates image from text prompt.
+///Details at https://platform.openai.com/docs/api-reference/images/create
+/// # Usage example
+///```
+/// use openai_req::image::ImageRequest;
+/// use openai_req::JsonRequest;
+///
+/// let prompt = "cool company logo".to_string();
+/// let req = ImageRequest::new(prompt);
+/// let res = req.run(&client).await?;
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ImageRequest {
     prompt: String,
@@ -60,7 +70,21 @@ impl ImageRequest {
     }
 }
 
-
+///Generates image edit for provided image.
+///Details at https://platform.openai.com/docs/api-reference/images/create-edit
+/// # Usage example
+///```
+/// use openai_req::image::ImageEditRequest;
+/// use std::path::PathBuf;
+/// use openai_req::FormRequest;
+///
+/// let image_path = PathBuf::from("tests/generated.png");
+/// let mask_path = PathBuf::from("tests/mask.png");
+/// let prompt = "remove text".to_string();
+/// let req = ImageEditRequest::new(image_path,prompt)?
+///         .mask(mask_path)?;
+/// let res = req.run(&client).await?;
+/// ```
 #[derive(Debug,Clone)]
 pub struct ImageEditRequest {
     image: PathBuf,
@@ -77,6 +101,8 @@ impl FormRequest<ImageResponse> for ImageEditRequest{
 }
 
 impl ImageEditRequest{
+
+    /// Will check if provided path exists, and return io::Error if it does not.
     pub fn new(image:PathBuf, prompt: String) -> Result<Self,Error> {
         if image.exists() {
             return Ok(
@@ -93,7 +119,8 @@ impl ImageEditRequest{
         Err(Error::new(NotFound, "File does not exist"))
     }
 
-    pub fn with_mask(mut self, mask: PathBuf) ->  Result<Self,Error> {
+    /// Will check if provided path exists, and return io::Error if it does not.
+    pub fn mask(mut self, mask: PathBuf) ->  Result<Self,Error> {
         if mask.exists() {
             self.mask = Some(mask);
             return Ok(self)
@@ -101,22 +128,22 @@ impl ImageEditRequest{
         Err(Error::new(NotFound, "File does not exist"))
     }
 
-    pub fn with_n(mut self, n: i32) -> Self {
+    pub fn n(mut self, n: i32) -> Self {
         self.n = Some(n);
         self
     }
 
-    pub fn with_size(mut self, size: ImageSize) -> Self {
+    pub fn size(mut self, size: ImageSize) -> Self {
         self.size = Some(size);
         self
     }
 
-    pub fn with_response_format(mut self, response_format: String) -> Self {
+    pub fn response_format(mut self, response_format: String) -> Self {
         self.response_format = Some(response_format);
         self
     }
 
-    pub fn with_user(mut self, user: String) -> Self {
+    pub fn user(mut self, user: String) -> Self {
         self.user = Some(user);
         self
     }
@@ -156,12 +183,23 @@ impl AsyncTryFrom<ImageEditRequest> for reqwest::multipart::Form {
     }
 }
 
-
+///Generates variation for provided image.
+///Details at https://platform.openai.com/docs/api-reference/images/create-variation
+/// # Usage example
+///```
+/// use std::path::PathBuf;
+/// use openai_req::FormRequest;
+/// use openai_req::image::ImageVariationRequest;
+///
+/// let image_path = PathBuf::from("tests/generated.png");
+/// let req = ImageVariationRequest::new(image_path)?;
+/// let res = req.run(&client).await?;
+/// ```
 #[derive(Debug,Clone)]
 pub struct ImageVariationRequest {
     image: PathBuf,
     n: Option<u32>,
-    size: Option<String>,
+    size: Option<ImageSize>,
     user: Option<String>
 }
 
@@ -170,13 +208,18 @@ impl FormRequest<ImageResponse> for ImageVariationRequest{
 }
 
 impl ImageVariationRequest {
-    pub fn new(image: PathBuf) -> Self {
-        ImageVariationRequest {
-            image,
-            n: None,
-            size: None,
-            user: None,
+    pub fn new(image: PathBuf) -> Result<Self,Error> {
+        if image.exists() {
+            return Ok(
+                Self {
+                    image,
+                    n: None,
+                    size: None,
+                    user: None,
+                }
+            )
         }
+        Err(Error::new(NotFound, "File does not exist"))
     }
 
     pub fn n(mut self, n: u32) -> Self {
@@ -184,7 +227,7 @@ impl ImageVariationRequest {
         self
     }
 
-    pub fn size(mut self, size: String) -> Self {
+    pub fn size(mut self, size: ImageSize) -> Self {
         self.size = Some(size);
         self
     }

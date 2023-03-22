@@ -3,13 +3,25 @@ use super::OpenAiClient;
 use async_trait::async_trait;
 use crate::{ByUrlRequest, DeleteResponse, DownloadRequest, FormRequest, GetRequest};
 use std::io;
+use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 use reqwest::multipart::{Form, Part};
 use serde::{Serialize, Deserialize};
 use with_id::WithRefId;
 use crate::conversions::AsyncTryFrom;
 use crate::file_to_part;
+use derive_more::*;
+use crate::fine_tunes::FineTuneFileInfo;
 
+/// Gets list of available files. More details at
+/// https://platform.openai.com/docs/api-reference/files/list
+/// # Usage example
+///```
+/// use openai_req::files::FileListResponse;
+/// use openai_req::GetRequest;
+///
+/// let files = FileListResponse::get(&client).await?;
+///```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileListResponse {
     pub data: Vec<FileInfo>,
@@ -32,11 +44,33 @@ pub struct FileInfo {
     pub purpose: String,
 }
 
+impl From<FineTuneFileInfo> for FileInfo{
+    fn from(value: FineTuneFileInfo) -> Self {
+        FileInfo{
+            id: value.id,
+            object: value.object,
+            bytes: value.bytes,
+            created_at: value.created_at,
+            filename: value.filename,
+            purpose: value.purpose,
+        }
+    }
+}
 
-#[derive(Serialize, Deserialize, Debug, Clone, WithRefId)]
+/// File delete request allows to delete file in OpenAI storage
+/// https://platform.openai.com/docs/api-reference/files/delete
+/// # Usage example
+///```
+/// use openai_req::ByUrlRequest;
+/// use openai_req::files::FileDeleteRequest;
+///
+/// let req = FileDeleteRequest::new("{file_id}".to_string());
+/// let delete_result = req.run(&client).await?;
+///```
+#[derive(Serialize, Deserialize, Debug, Clone, WithRefId, Constructor)]
 pub struct FileDeleteRequest{
     #[id]
-    pub file_id:String
+    file_id:String
 }
 
 impl From<FileInfo> for FileDeleteRequest {
@@ -56,22 +90,40 @@ impl ByUrlRequest<DeleteResponse> for FileDeleteRequest{
     }
 }
 
-
-#[derive(Serialize, Deserialize, Debug, Clone, WithRefId)]
+///Gets info about single uploaded file.
+///Refer to https://platform.openai.com/docs/api-reference/files/retrieve for additional details
+///# Usage example
+///```
+/// use openai_req::ByUrlRequest;
+/// use openai_req::files::FileInfoRequest;
+///
+/// let info_request = FileInfoRequest::new("{file_id}".to_string());
+/// let info = info_request.run(&client).await?;
+///```
+#[derive(Serialize, Deserialize, Debug, Clone, WithRefId, Constructor)]
 pub struct FileInfoRequest{
     #[id]
-    pub file_id:String
+    file_id:String
 }
 
 impl ByUrlRequest<FileInfo> for FileInfoRequest{
     const ENDPOINT: &'static str = "/files/";
     const SUFFIX: &'static str = "";
 }
-
-#[derive(Serialize, Deserialize, Debug, Clone, WithRefId)]
+///Request to download file.
+/// More details at https://platform.openai.com/docs/api-reference/files/retrieve-content
+/// # Usage example
+/// ```
+///  use openai_req::DownloadRequest;
+///  use openai_req::files::FileDownloadRequest;
+///
+///  let req = FileDownloadRequest::new("{file_id}".to_string());
+///  req.download_to_file(&client, "C:/Downloads/fine-name.ext").await?;
+///```
+#[derive(Serialize, Deserialize, Debug, Clone, WithRefId, Constructor)]
 pub struct FileDownloadRequest{
     #[id]
-    pub file_id:String
+    file_id:String
 }
 
 impl DownloadRequest for FileDownloadRequest{
@@ -87,10 +139,20 @@ impl From<FileInfo> for FileDownloadRequest {
     }
 }
 
+///Upload local file to OpenAI storage(usually for the purpose of fine-tuning).
+///More details at https://platform.openai.com/docs/api-reference/files/upload
+/// # Usage example
+///```
+/// use openai_req::files::FileUploadRequest;
+/// use openai_req::FormRequest;
+///
+/// let file = FileUploadRequest::with_str("tests/fine-tune.json","fine-tune");
+/// let response = file.run(&client).await?;
+/// ```
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileUploadRequest{
-    pub file:PathBuf,
-    pub purpose:String
+    file:PathBuf,
+    purpose:String
 }
 
 
@@ -99,17 +161,32 @@ impl FormRequest<FileInfo> for FileUploadRequest{
 }
 
 impl FileUploadRequest {
-    pub fn new(file:PathBuf, purpose:String) ->FileUploadRequest{
-        FileUploadRequest{
-            file,
-            purpose
+
+    ///basic constructor, takes path to file and file purpose
+    pub fn new(file:PathBuf, purpose:String) ->Result<FileUploadRequest,Error>{
+        if file.exists() {
+            Ok(
+                FileUploadRequest {
+                    file,
+                    purpose
+                }
+            )
+        }else {
+            Err(Error::new(ErrorKind::NotFound, "File does not exist"))
         }
     }
-
-    pub fn with_str(file:&str,purpose:&str)->FileUploadRequest{
-        FileUploadRequest{
-            file: PathBuf::from(file),
-            purpose:purpose.to_string()
+    ///same arguments as in ::new, but as str refs for convenience
+    pub fn with_str(file:&str,purpose:&str)->Result<FileUploadRequest,Error>{
+        let path = PathBuf::from(file);
+        if path.exists() {
+            Ok(
+                FileUploadRequest {
+                    file: path,
+                    purpose: purpose.to_string()
+                }
+            )
+        }else {
+            Err(io::Error::new(ErrorKind::NotFound, "File does not exist"))
         }
     }
 }

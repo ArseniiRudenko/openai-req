@@ -1,7 +1,21 @@
 use serde::{Serialize,Deserialize};
 use crate::{JsonRequest, Usage};
 use async_trait::async_trait;
+
+
 ///text edit request as defined by https://platform.openai.com/docs/api-reference/edits
+///
+/// # Usage example
+///```
+///    use openai_req::edit::EditRequest;
+///    use openai_req::JsonRequest;
+///
+///    let instruction = "correct spelling";
+///    let text = "quick blck fox jupms over lazy dog";
+///    let request = EditRequest::new_text(instruction).set_input(text);
+///    let response = request.run(&client).await?;
+/// ```
+///
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditRequest {
     model: String,

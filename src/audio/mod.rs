@@ -34,6 +34,8 @@ pub struct AudioResponse{
 }
 
 ///request that provides transcription for given audio file
+///parameter details at  https://platform.openai.com/docs/api-reference/audio/create
+///
 /// # Usage example
 ///```
 ///
@@ -43,7 +45,7 @@ pub struct AudioResponse{
 ///
 ///   let req =TranscriptionRequest::new(PathBuf::from("tests/Linus-linux.mp3"))
 ///         .language(Iso639_1::En);
-///     let res = req.run(&client).await?;
+///   let res = req.run(&client).await?;
 ///
 /// ```
 #[derive(Clone, Debug,Serialize,Deserialize)]
@@ -95,8 +97,9 @@ impl AsyncTryFrom<TranscriptionRequest> for Form {
 
 impl TranscriptionRequest {
 
-    /// minimal constructor is enough, you can run transcription by only providing file name,
-    /// but quality will be significantly better if you at least specify source language
+    /// Minimal constructor is enough to run a request,
+    /// you can get a transcription by only providing file name.
+    /// But quality will be significantly better if you at least specify source language
     pub fn new(file: PathBuf) -> Self {
         TranscriptionRequest {
             file,
@@ -152,6 +155,7 @@ impl TranscriptionRequest {
 }
 
 ///request that provides translation to english for given audio file
+///parameter details at  https://platform.openai.com/docs/api-reference/audio/create
 /// # Usage example
 ///```
 ///
@@ -159,7 +163,7 @@ impl TranscriptionRequest {
 /// use openai_req::audio::TranslationRequest;
 /// use openai_req::FormRequest;
 /// let req = TranslationRequest::new(PathBuf::from("tests/Linus-linux.mp3"));
-///     let res = req.run(&client).await?;
+/// let res = req.run(&client).await?;
 /// ```
 #[derive(Clone, Debug,Serialize,Deserialize)]
 pub struct TranslationRequest{

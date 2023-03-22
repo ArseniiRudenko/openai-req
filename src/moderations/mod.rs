@@ -2,6 +2,16 @@
 use crate::{Input, JsonRequest};
 use serde::*;
 
+/// Obtains moderation info for provided text.
+/// More details at https://platform.openai.com/docs/api-reference/moderations
+/// # Usage example
+/// ```
+/// use openai_req::JsonRequest;
+/// use openai_req::moderations::ModerationRequest;
+/// 
+/// let req = ModerationRequest::new("I want to kill everyone".into());
+/// let res = req.run(&client).await?;
+/// ```
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ModerationRequest{
     pub input:Input,

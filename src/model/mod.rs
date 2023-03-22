@@ -1,15 +1,25 @@
 use std::fmt::{Display, Formatter};
+use derive_more::Constructor;
 use reqwest::RequestBuilder;
 use crate::{ByUrlRequest, DeleteResponse, GetRequest, OpenAiClient};
 use with_id::WithRefId;
 use serde::{Serialize,Deserialize};
 use crate::fine_tunes::{FineTune, FineTuneListEntry};
 
-/// allows to get info about single model from its name
-#[derive(Clone, Debug, Deserialize,Serialize,WithRefId)]
+/// allows to get info about single model from its name.
+/// More details at https://platform.openai.com/docs/api-reference/models/retrieve
+/// # Usage example
+/// ```
+/// use openai_req::ByUrlRequest;
+/// use openai_req::model::ModelRequest;
+///
+/// let model_request = ModelRequest::new("model_name".to_string());
+/// let model_info = model_request.run(&lclient).await?;
+/// ```
+#[derive(Clone, Debug, Deserialize,Serialize,WithRefId,Constructor)]
 pub struct ModelRequest {
     #[id]
-    pub model_name: String
+    model_name: String
 }
 
 
@@ -76,7 +86,15 @@ pub struct ModelPermission {
     pub is_blocking: bool,
 }
 
-/// list of all available models, doesnt require request, has get method
+/// List of all available models.
+/// More details at https://platform.openai.com/docs/api-reference/models/list
+/// # Usage example
+/// ```
+/// use openai_req::GetRequest;
+/// use openai_req::model::ModelListResponse;
+///
+/// let response = ModelListResponse::get(&client).await?;
+/// ```
 #[derive(Clone, Debug, Deserialize,Serialize)]
 pub struct ModelListResponse {
     pub object: String,
@@ -87,10 +105,21 @@ impl GetRequest for ModelListResponse {
     const ENDPOINT: &'static str = "/models";
 }
 
-/// allows deleting owned models
-#[derive(Serialize, Deserialize, Debug, Clone,WithRefId)]
+/// allows deleting owned models. Part of the fine-tune API.
+/// More details at https://platform.openai.com/docs/api-reference/fine-tunes/delete-model
+/// # Usage example
+/// ```
+/// use openai_req::ByUrlRequest;
+/// use openai_req::model::ModelDeleteRequest;
+///
+/// let req = ModelDeleteRequest::new("model_name".to_string());
+/// let res = req.run(&client).await?;
+/// ```
+///
+#[derive(Serialize, Deserialize, Debug, Clone,WithRefId,Constructor)]
 pub struct ModelDeleteRequest {
-    pub id: String
+    #[id]
+    model_name: String
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -112,7 +141,7 @@ impl TryFrom<FineTuneListEntry> for ModelDeleteRequest {
 
     fn try_from(value: FineTuneListEntry) -> Result<Self, Self::Error> {
         Ok(ModelDeleteRequest {
-            id: value
+            model_name: value
                 .fine_tuned_model
                 .ok_or(ConversionError{
                     message:"can only convert finished fine tune, that has fine tune model set"
@@ -127,7 +156,7 @@ impl TryFrom<FineTune> for ModelDeleteRequest {
 
     fn try_from(value: FineTune) -> Result<Self, Self::Error> {
         Ok(ModelDeleteRequest {
-            id: value
+            model_name: value
                 .fine_tuned_model
                 .ok_or(ConversionError{
                     message:"can only convert finished fine tune, that has fine tune model set"
