@@ -95,7 +95,7 @@ async fn embeddings()-> Result<(),anyhow::Error> {
 async fn file_upload() -> Result<(),anyhow::Error> {
     let client = get_client();
     //upload file
-    let file = FileUploadRequest::with_str("tests/fine-tune.json","fine-tune")?;
+    let file = FileUploadRequest::with_str("test_resources/fine-tune.json","fine-tune")?;
     let response = file.run(&client).await?;
     dbg!(&response);
     //get info about single file
@@ -125,7 +125,7 @@ async fn file_download() -> Result<(),anyhow::Error> {
     let info = files.data.first().ok_or(anyhow!("No files available"))?;
     let download_request: FileDownloadRequest = info.clone().into();
     download_request.download_to_file(&client, "fine-tune2.json").await?;
-    if !diff("fine-tune.json", "fine-tune2.json") {
+    if !diff("test_resources/fine-tune.json", "fine-tune2.json") {
         panic!("downloaded file are not the same as uploaded file")
     }
     fs::remove_file("fine-tune2.json")?;
@@ -197,8 +197,6 @@ async fn file_tune_model_delete() -> Result<(),anyhow::Error> {
     //list fine tunes
     let fine_tunes = FineTuneListResponse::get(&client).await?;
     dbg!(&fine_tunes);
-
-
     for file in fine_tunes.data{
         let delete_request: ModelDeleteRequest = file.clone().try_into()?;
         let delete_result = delete_request.run(&client).await?;
@@ -222,7 +220,7 @@ async fn moderation() -> Result<(),anyhow::Error> {
 async fn transcription() -> Result<(),anyhow::Error> {
     let client = get_client();
     let req =
-        TranscriptionRequest::new(PathBuf::from("tests/Linus-linux.mp3"))
+        TranscriptionRequest::new(PathBuf::from("test_resources/Linus-linux.mp3"))
         .language(Iso639_1::En);
     let res = req.run(&client).await?;
     dbg!(res);
@@ -237,7 +235,7 @@ async fn translation() -> Result<(),anyhow::Error> {
 
     let client = get_client();
     let req =
-        TranslationRequest::new(PathBuf::from("tests/Linus-linux.mp3"));
+        TranslationRequest::new(PathBuf::from("test_resources/Linus-linux.mp3"));
     let res = req.run(&client).await?;
     dbg!(res);
     Ok(())
@@ -259,7 +257,7 @@ async fn image_gen() -> Result<(),anyhow::Error> {
 #[ignore]
 async fn image_var() -> Result<(),anyhow::Error> {
     let client = get_client();
-    let image_path =PathBuf::from("tests/generated.png");
+    let image_path =PathBuf::from("test_resources/generated.png");
     let req = ImageVariationRequest::new(image_path)?.size(ImageSize::S256);
     let res = req.run(&client).await?;
     dbg!(res);
@@ -274,8 +272,8 @@ async fn image_var() -> Result<(),anyhow::Error> {
 #[ignore]
 async fn image_edit() -> Result<(),anyhow::Error> {
     let client = get_client();
-    let image_path =PathBuf::from("tests/generated.png");
-    let mask_path =PathBuf::from("tests/mask.png");
+    let image_path =PathBuf::from("test_resources/generated.png");
+    let mask_path =PathBuf::from("test_resources/mask.png");
     let prompt = "remove text".to_string();
     let req = ImageEditRequest::new(image_path,prompt)?
         .size(ImageSize::S256)
