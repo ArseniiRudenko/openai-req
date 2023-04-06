@@ -41,7 +41,15 @@ async fn chat() -> Result<(),anyhow::Error> {
      role: Role::User,
      content: "hello!".to_string(),
    });
-   let chat_request = ChatRequest::new(messages);
+   let mut chat_request = ChatRequest::new(messages);
+   let response = chat_request.run(&client).await?;
+   dbg!(&response);
+   chat_request.push_message(response.choices[0].message.clone());
+   chat_request.push_message(Message {
+       role: Role::User,
+       content: "how are you?".to_string()
+   });
+   dbg!(&reqwest);
    let response = chat_request.run(&client).await?;
    dbg!(response);
    Ok(())

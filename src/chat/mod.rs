@@ -106,6 +106,10 @@ impl ChatRequest {
         }
     }
 
+    pub fn push_message(&mut self, message:Message) {
+        self.messages.push(message);
+    }
+
     pub fn add_message(mut self, message:Message) ->Self{
         self.messages.push(message);
         self
